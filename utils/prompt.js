@@ -150,6 +150,81 @@ async function addDepartment() {
   }
 }
 
+// Retrieve role data and display it
+async function viewAllRoles() {
+  try {
+    // Fetch all role data from the role module
+    const moduleData = await role.viewAllRolesQuery();
+
+    // Transform the data for display
+    const tableData = moduleData.map((row) => ({
+      Role_ID: row.id,
+      Role_Title: row.title,
+      Salary: row.salary,
+      Department_Name: row.department_name,
+    }));
+
+    // Display department data as a table and show the main menu
+    console.table(tableData);
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// Add a new role based on user input
+async function addRole() {
+  try {
+    // Fetch department data for user choices
+    const departments = await data.viewAllDepartmentsQuery();
+
+    // Create department choices for user selection
+    const departmentChoices = departments.map((department) => ({
+      name: department.name,
+      value: department.id,
+    }));
+
+    // Prompt user for role details: title, salary, department
+    const res = await inquirer.prompt([
+      {
+        type: "input",
+        message: "Role Title:",
+        name: "title",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter a role title." : true,
+      },
+      {
+        type: "input",
+        message: "Role Salary:",
+        name: "salary",
+        validate: (value) =>
+          isNaN(value) || Number(value) <= 0
+            ? "Please enter a valid positive salary."
+            : true,
+      },
+      {
+        type: "list",
+        message: "Select the department for the role:",
+        name: "departmentId",
+        choices: departmentChoices,
+      },
+    ]);
+
+    // Add a role with provided details
+    await role.addRoleQuery(res.title, res.salary, res.departmentId);
+
+    // Log a success message and show the main menu
+    console.log("Role Added");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
 // BONUS FUNCTIONS STARTS HERE
 
 // Modify the viewDepartmentBudget function
@@ -224,6 +299,51 @@ async function deleteDepartment() {
 
     // Log a success message and show the main menu
     console.log("Department Deleted");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// Delete a role
+async function deleteRole() {
+  try {
+    // Fetch all role data from the database
+    const roles = await role.viewAllRolesQuery();
+
+    // Create an array of role choices based on the available Role IDs
+    const roleChoices = roles.map((role) => ({
+      name: `${role.id} - ${role.title}`,
+      value: role.id,
+    }));
+
+    // Add a "Cancel" option to the list of choices
+    roleChoices.push({ name: "Cancel", value: "cancel" });
+
+    // Prompt the user to select the Role to delete
+    const res = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select the Role to delete:",
+        name: "roleId",
+        choices: roleChoices,
+      },
+    ]);
+
+    // Check if the user selected "Cancel"
+    if (res.roleId === "cancel") {
+      console.log("Operation canceled. Going back to the main menu.");
+      menu(); // Go back to the main menu
+      return; // Exit the function
+    }
+
+    // Call the deleteRoleById method with the provided role ID
+    await role.deleteRoleByIdQuery(res.roleId);
+
+    // Log a success message and show the main menu
+    console.log("Role Deleted");
     menu();
   } catch (err) {
     // Handle and log errors, then show the main menu

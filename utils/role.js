@@ -60,7 +60,7 @@ class Role {
   // BONUS FUNCTIONS STARTS HERE
 
   // Method to delete a role by its ID
-  deleteRoleById(roleId) {
+  deleteRoleByIdQuery(roleId) {
     return new Promise((resolve, reject) => {
       // SQL query to delete a role by its ID
       const queryString = `
