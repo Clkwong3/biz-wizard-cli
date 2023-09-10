@@ -2,6 +2,8 @@
 const inquirer = require("inquirer");
 const connection = require("../db/config"); // Database configuration
 const data = require("./department"); // Import data functions from the department module
+const role = require("./role"); // Import role functions from the role module
+
 require("console.table"); // Import console.table for displaying data in tabular format
 
 // Display the main menu, handle user choices, and manage program flow
@@ -99,44 +101,53 @@ function exitProgram() {
   });
 }
 
-// Retrieve department data by calling a method from the data module and display it
-function viewAllDepartments() {
-  // Call the function to get all departments from the data module. Returns a Promise.
-  data.viewAllDepartmentsQuery().then((data) => {
-    // Map the data to the expected format
-    let tableData = data.map((row) => ({
-      Department_Id: row.id,
+// Retrieve department data and display it
+async function viewAllDepartments() {
+  try {
+    // Fetch data from the data module
+    const moduleData = await data.viewAllDepartmentsQuery();
+
+    // Transform data for table display
+    const tableData = moduleData.map((row) => ({
+      Department_ID: row.id,
       Department_Name: row.name,
     }));
-    console.table(tableData); // Display the department data
-    menu(); // Show the main menu and handle user input
-  });
+
+    // Display department data as a table and show the main menu
+    console.table(tableData);
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
 }
 
-// Use the department module to add a new department based on user input
-function addDepartment() {
-  // Ask user for the name of the department
-  inquirer
-    .prompt([
+// Add a new department based on user input
+async function addDepartment() {
+  try {
+    // Prompt the user for the department name
+    const res = await inquirer.prompt([
       {
         type: "input",
-        message: "What is the name of the Department you are adding?",
+        message: "Enter the Department name:",
         name: "name",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter a department name." : true,
       },
-    ])
-    .then((res) => {
-      // Call the method from the Department class to add a department with the provided name
-      data
-        .addDepartmentQuery(res.name)
-        .then(() => {
-          console.log("Department Added"); // Log a success message
-          menu(); // Show the main menu again
-        })
-        .catch((err) => {
-          console.error(err); // Log and handle errors if any
-          menu(); // Show the main menu again
-        });
-    });
+    ]);
+
+    // Call the method to add a department with the provided name
+    await data.addDepartmentQuery(res.name);
+
+    // Log a success message and show the main menu
+    console.log("Department Added");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
 }
 
 // BONUS FUNCTIONS STARTS HERE
@@ -163,7 +174,7 @@ async function viewDepartmentBudget() {
     ]);
 
     // Call the calculateTotalSalaryByDepartmentId method with the selected department ID
-    const totalSalary = await data.calculateTotalSalaryByDepartmentId(
+    const totalSalary = await data.calculateTotalSalaryByDepartmentIdQuery(
       departmentResponse.departmentId
     );
 
