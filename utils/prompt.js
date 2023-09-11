@@ -123,6 +123,17 @@ function closeProgram() {
   });
 }
 
+// Handle errors
+function handleError(err) {
+  // Handle and log errors
+  console.error(err);
+}
+
+// Show main menu
+function showMainMenu() {
+  menu();
+}
+
 // Fetch department data from data module
 async function fetchDepartmentData() {
   try {
@@ -149,17 +160,6 @@ function displayTable(data) {
   console.table(data);
 }
 
-// Handle errors
-function handleError(err) {
-  // Handle and log errors
-  console.error(err);
-}
-
-// Show main menu
-function showMainMenu() {
-  menu();
-}
-
 // View all departments
 async function viewAllDepartments() {
   try {
@@ -178,33 +178,45 @@ async function viewAllDepartments() {
   }
 }
 
+// Prompt the user for a department name
+async function promptForDepartmentName() {
+  const answers = await inquirer.prompt([
+    {
+      type: "input",
+      message: "Enter the Department name:",
+      name: "name",
+      validate: (value) =>
+        value.trim() === "" ? "Please enter a department name." : true,
+    },
+  ]);
+  return answers.name;
+}
+
+// Add a department with the provided name
+async function addDepartmentWithName(name) {
+  try {
+    await data.addDepartmentQuery(name);
+    console.log("Department Added");
+  } catch (err) {
+    throw err; // Handle errors at a higher level
+  }
+}
+
 // Add a new department based on user input
 async function addDepartment() {
   try {
     // Prompt the user for the department name
-    const res = await inquirer.prompt([
-      {
-        type: "input",
-        message: "Enter the Department name:",
-        name: "name",
-        validate: (value) =>
-          value.trim() === "" ? "Please enter a department name." : true,
-      },
-    ]);
+    const departmentName = await promptForDepartmentName();
 
-    // Call the method to add a department with the provided name
-    await data.addDepartmentQuery(res.name);
+    // Add the department with the provided name
+    await addDepartmentWithName(departmentName);
 
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Log a success message and show the main menu
-    console.log("Department Added");
-    menu();
+    // Show the main menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 
