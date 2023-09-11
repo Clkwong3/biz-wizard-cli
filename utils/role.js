@@ -7,11 +7,24 @@ class Role {
     this.connection = connection; // Store the database connection
   }
 
-  // Method to retrieve all roles from the database
-  viewAllRolesQuery() {
+  // Custom function to execute SQL queries with error handling
+  executeQuery(sql, args) {
     return new Promise((resolve, reject) => {
-      // SQL query to retrieve role data including role ID, title, department name, and salary
-      const queryString = `
+      this.connection.query(sql, args, (err, results) => {
+        if (err) {
+          console.error("Database Query Error:", err);
+          reject(err);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  }
+
+  // Method to retrieve all roles from the database
+  async viewAllRolesQuery() {
+    try {
+      const sql = `
         SELECT role.id, 
           role.title, 
           department.name AS department_name, 
@@ -20,64 +33,47 @@ class Role {
         LEFT JOIN department ON role.department_id = department.id;
       `;
 
-      // Execute the SQL query to select all roles
-      this.connection.query(queryString, (err, results) => {
-        if (err) {
-          console.error("Error fetching roles:", err); // If there's an error, reject the promise and log the error
-          reject(err);
-        } else {
-          resolve(results); // If successful, resolve the promise with the fetched data
-        }
-      });
-    });
+      const results = await this.executeQuery(sql);
+      return results;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Method to add a new role to the database
-  addRoleQuery(title, salary, departmentId) {
-    return new Promise((resolve, reject) => {
-      // SQL query to insert a new role into the database, including title, salary, and department ID
-      const queryString = `
+  async addRoleQuery(title, salary, departmentId) {
+    try {
+      const sql = `
         INSERT INTO role (title, salary, department_id)
         VALUES (?, ?, ?);
       `;
 
-      // Execute the SQL query to insert a new role
-      this.connection.query(
-        queryString,
-        [title, salary, departmentId],
-        (err, result) => {
-          if (err) {
-            console.error("Error adding role:", err); // If there's an error, reject the promise and log the error
-            reject(err);
-          } else {
-            resolve(result); // If successful, resolve the promise
-          }
-        }
-      );
-    });
+      const result = await this.executeQuery(sql, [
+        title,
+        salary,
+        departmentId,
+      ]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // BONUS FUNCTIONS STARTS HERE
+  // BONUS FUNCTIONS START HERE
 
   // Method to delete a role by its ID
-  deleteRoleByIdQuery(roleId) {
-    return new Promise((resolve, reject) => {
-      // SQL query to delete a role by its ID
-      const queryString = `
+  async deleteRoleByIdQuery(roleId) {
+    try {
+      const sql = `
         DELETE FROM role
         WHERE id = ?;
       `;
 
-      // Execute the SQL query to delete the role
-      this.connection.query(queryString, [roleId], (err, result) => {
-        if (err) {
-          console.error("Error deleting role:", err); // If there's an error, reject the promise and log the error
-          reject(err);
-        } else {
-          resolve(result); // If successful, resolve the promise
-        }
-      });
-    });
+      const result = await this.executeQuery(sql, [roleId]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

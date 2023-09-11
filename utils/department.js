@@ -7,89 +7,70 @@ class Department {
     this.connection = connection; // Store the database connection
   }
 
-  viewAllDepartmentsQuery() {
+  // Custom function to execute SQL queries with error handling
+  executeQuery(sql, args) {
     return new Promise((resolve, reject) => {
-      // Execute the SQL query to select all departments
-      this.connection.query(`SELECT * FROM department;`, (err, results) => {
+      this.connection.query(sql, args, (err, results) => {
         if (err) {
-          // If there's an error, reject the promise and log the error
-          console.error("Error fetching departments:", err);
+          console.error("Database Query Error:", err);
           reject(err);
         } else {
-          // If successful, resolve the promise with the fetched data
           resolve(results);
         }
       });
     });
   }
 
-  // Method to add a new department to the database
-  addDepartmentQuery(data) {
-    return new Promise((resolve, reject) => {
-      // Execute the SQL query to insert a new department
-      this.connection.query(
-        `INSERT INTO department (name) VALUES (?)`,
-        [data],
-        (err, result) => {
-          if (err) {
-            // If there's an error, reject the promise and log the error
-            console.error("Error adding department:", err);
-            reject(err);
-          } else {
-            // If successful, resolve the promise
-            resolve(result);
-          }
-        }
-      );
-    });
+  // Method to view all departments
+  async viewAllDepartmentsQuery() {
+    try {
+      const sql = "SELECT * FROM department";
+      const results = await this.executeQuery(sql);
+      return results;
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // BONUS FUNCTIONS STARTS HERE
+  // Method to add a new department
+  async addDepartmentQuery(data) {
+    try {
+      const sql = "INSERT INTO department (name) VALUES (?)";
+      const result = await this.executeQuery(sql, [data]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // BONUS FUNCTIONS START HERE
 
   // Method to calculate total salary by department ID
-  calculateTotalSalaryByDepartmentIdQuery(departmentId) {
-    return new Promise((resolve, reject) => {
-      // Execute the SQL query to calculate the salary
-      const query = `
-      SELECT SUM(r.salary) AS total_salary
-      FROM employee e
-      JOIN role r ON e.role_id = r.id
-      WHERE r.department_id = ?
-    `;
+  async calculateTotalSalaryByDepartmentIdQuery(departmentId) {
+    try {
+      const sql = `
+        SELECT SUM(r.salary) AS total_salary
+        FROM employee e
+        JOIN role r ON e.role_id = r.id
+        WHERE r.department_id = ?
+        `;
 
-      this.connection.query(query, [departmentId], (err, results) => {
-        if (err) {
-          // If there's an error, reject the promise and log the error
-          console.error("Error calculating department salary:", err);
-          reject(err);
-        } else {
-          // If successful, resolve the promise
-          const totalSalary = results[0].total_salary;
-          resolve(totalSalary);
-        }
-      });
-    });
+      const results = await this.executeQuery(sql, [departmentId]);
+      return results[0].total_salary;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Method to delete a department by ID
-  deleteDepartmentByIdQuery(departmentId) {
-    return new Promise((resolve, reject) => {
-      // Execute the SQL query to delete the department
-      this.connection.query(
-        `DELETE FROM department WHERE id = ?`,
-        [departmentId],
-        (err, result) => {
-          if (err) {
-            // If there's an error, reject the promise and log the error
-            console.error("Error deleting department:", err);
-            reject(err);
-          } else {
-            // If successful, resolve the promise
-            resolve(result);
-          }
-        }
-      );
-    });
+  async deleteDepartmentByIdQuery(departmentId) {
+    try {
+      const sql = "DELETE FROM department WHERE id = ?";
+      const result = await this.executeQuery(sql, [departmentId]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
