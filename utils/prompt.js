@@ -165,10 +165,13 @@ async function viewAllDepartments() {
   try {
     // Fetch department data
     const departmentData = await fetchDepartmentData();
+
     // Transform data for table display
     const tableData = transformToTableData(departmentData);
+
     // Display department data
     displayTable(tableData);
+
     // Show Main Menu
     showMainMenu();
   } catch (err) {
@@ -196,7 +199,7 @@ async function promptForDepartmentName() {
 async function addDepartmentWithName(name) {
   try {
     await data.addDepartmentQuery(name);
-    console.log("Department Added");
+    console.log("Department Added Successfully");
   } catch (err) {
     throw err; // Handle errors at a higher level
   }
@@ -269,57 +272,83 @@ async function viewAllRoles() {
   }
 }
 
+// Fetch department data for user choices
+async function fetchDepartmentsForChoices() {
+  try {
+    return await data.viewAllDepartmentsQuery();
+  } catch (err) {
+    throw err; // Re-throw error to a different function to deal with it furthur
+  }
+}
+
+// Create department choices for user
+function createDepartmentChoices(departments) {
+  return departments.map((departments) => ({
+    name: departments.name,
+    value: departments.id,
+  }));
+}
+
+// Prompt user for role details: title, salary, department
+async function promptForRoleDetails(departmentChoices) {
+  const answers = await inquirer.prompt([
+    {
+      type: "input",
+      message: "Role Title:",
+      name: "title",
+      validate: (value) =>
+        value.trim() === "" ? "Please enter a role title." : true,
+    },
+    {
+      type: "input",
+      message: "Role Salary:",
+      name: "salary",
+      validate: (value) =>
+        isNaN(value) || Number(value) <= 0
+          ? "Please enter a valid positive salary."
+          : true,
+    },
+    {
+      type: "list",
+      message: "Select the department for the role:",
+      name: "departmentId",
+      choices: departmentChoices,
+    },
+  ]);
+  return answers;
+}
+
+// Add a role with the provide details
+async function addRoleWithDetails(title, salary, departmentId) {
+  try {
+    await role.addRoleQuery(title, salary, departmentId);
+    console.log("Role Added Successfully");
+  } catch (err) {
+    throw err;
+  }
+}
+
 // Add a new role based on user input
 async function addRole() {
   try {
-    // Fetch department data for user choices
-    const departments = await data.viewAllDepartmentsQuery();
+    // Fetch department data for user choice
+    const departments = await fetchDepartmentsForChoices();
 
-    // Create department choices for user selection
-    const departmentChoices = departments.map((department) => ({
-      name: department.name,
-      value: department.id,
-    }));
+    // Create department choices for user
+    const departmentChoices = createDepartmentChoices(departments);
 
-    // Prompt user for role details: title, salary, department
-    const res = await inquirer.prompt([
-      {
-        type: "input",
-        message: "Role Title:",
-        name: "title",
-        validate: (value) =>
-          value.trim() === "" ? "Please enter a role title." : true,
-      },
-      {
-        type: "input",
-        message: "Role Salary:",
-        name: "salary",
-        validate: (value) =>
-          isNaN(value) || Number(value) <= 0
-            ? "Please enter a valid positive salary."
-            : true,
-      },
-      {
-        type: "list",
-        message: "Select the department for the role:",
-        name: "departmentId",
-        choices: departmentChoices,
-      },
-    ]);
+    // Prompt user for role details
+    const answer = await promptForRoleDetails(departmentChoices);
 
     // Add a role with provided details
-    await role.addRoleQuery(res.title, res.salary, res.departmentId);
+    await addRoleWithDetails(answer.title, answer.salary, answer.departmentId);
 
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Log a success message and show the main menu
-    console.log("Role Added");
-    menu();
+    // Show the main menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 
