@@ -23,6 +23,7 @@ async function generateHeader() {
     return null;
   }
 }
+
 // Display the main menu, handle user choices, and manage program flow
 function menu() {
   // Display the header
@@ -122,28 +123,58 @@ function closeProgram() {
   });
 }
 
-// Retrieve department data and display it
+// Fetch department data from data module
+async function fetchDepartmentData() {
+  try {
+    return await data.viewAllDepartmentsQuery();
+  } catch (err) {
+    throw err; // Handle error at a higher level
+  }
+}
+
+// Transform department data for table display
+function transformToTableData(data) {
+  return data.map((row) => ({
+    Department_ID: row.id,
+    Department_Name: row.name,
+  }));
+}
+
+// Display department data as a table
+function displayTable(data) {
+  // Add empty lines for spacing
+  console.log("\n");
+
+  // Display department data as a table
+  console.table(data);
+}
+
+// Handle errors
+function handleError(err) {
+  // Handle and log errors
+  console.error(err);
+}
+
+// Show main menu
+function showMainMenu() {
+  menu();
+}
+
+// View all departments
 async function viewAllDepartments() {
   try {
-    // Fetch data from the data module
-    const moduleData = await data.viewAllDepartmentsQuery();
-
+    // Fetch department data
+    const departmentData = await fetchDepartmentData();
     // Transform data for table display
-    const tableData = moduleData.map((row) => ({
-      Department_ID: row.id,
-      Department_Name: row.name,
-    }));
-
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Display department data as a table and show the main menu
-    console.table(tableData);
-    menu();
+    const tableData = transformToTableData(departmentData);
+    // Display department data
+    displayTable(tableData);
+    // Show Main Menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 
@@ -348,9 +379,6 @@ async function addEmployee() {
       },
     ]);
 
-    // Log the selected managerId
-    console.log("Selected Manager ID:", userInputs.managerId);
-
     // Add an employee with provided details
     await employee.addEmployeeQuery(
       userInputs.firstName,
@@ -490,7 +518,7 @@ async function viewEmployeesByManager() {
     const managerChoicesArray = [];
     const managerIdMap = {};
 
-    // Populate the managerChoicesArray and managerIdMap
+    // Populate the managerMap
     employees.forEach((emp) => {
       if (
         emp.manager_first_name &&
