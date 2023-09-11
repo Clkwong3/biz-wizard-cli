@@ -122,7 +122,7 @@ function closeProgram() {
     }
   });
 }
-
+//----------------------------------------------------------------
 // Handle errors
 function handleError(err) {
   // Handle and log errors
@@ -133,7 +133,7 @@ function handleError(err) {
 function showMainMenu() {
   menu();
 }
-
+//----------------------------------------------------------------
 // Fetch department data from data module
 async function fetchDepartmentData() {
   try {
@@ -180,7 +180,7 @@ async function viewAllDepartments() {
     showMainMenu();
   }
 }
-
+//----------------------------------------------------------------
 // Prompt the user for a department name
 async function promptForDepartmentName() {
   const answers = await inquirer.prompt([
@@ -222,7 +222,7 @@ async function addDepartment() {
     showMainMenu();
   }
 }
-
+//----------------------------------------------------------------
 // Fetch all role data from the role module
 async function fetchRoleData() {
   try {
@@ -247,7 +247,7 @@ function displayRoleTable(role) {
   // Add empty lines for spacing
   console.log("\n");
 
-  // Display department data as a table
+  // Display role data as a table
   console.table(role);
 }
 
@@ -271,7 +271,7 @@ async function viewAllRoles() {
     showMainMenu();
   }
 }
-
+//----------------------------------------------------------------
 // Fetch department data for user choices
 async function fetchDepartmentsForChoices() {
   try {
@@ -351,40 +351,61 @@ async function addRole() {
     showMainMenu();
   }
 }
+//----------------------------------------------------------------
+// Fetch all employee data from employee module
+async function fetchEmployeeData() {
+  try {
+    return await employee.viewAllEmployeesQuery();
+  } catch (err) {
+    throw err; // Re-throw the error
+  }
+}
+
+// Transform employee data for display
+function transformEmployeeDataForDisplay(employee) {
+  return employee.map((row) => ({
+    Employee_ID: row.id,
+    First_Name: row.first_name,
+    Last_Name: row.last_name,
+    Title: row.title,
+    Department: row.department,
+    Salary: row.salary,
+    Manager:
+      row.manager_first_name && row.manager_last_name
+        ? row.manager_first_name + " " + row.manager_last_name
+        : "No Manager", // Replace null manager info with "No Manager"
+  }));
+}
+
+// Display employee data as a table
+function displayEmployeeTable(employee) {
+  // Add empty lines for spacing
+  console.log("\n");
+
+  // Display employee data as a table
+  console.table(employee);
+}
 
 // Display all employees
 async function viewAllEmployees() {
   try {
-    // Fetch all employee data from the employee module
-    const moduleData = await employee.viewAllEmployeesQuery();
+    // Fetch all employee data
+    const employeeData = await fetchEmployeeData();
 
     // Transform the data for display
-    const tableData = moduleData.map((row) => ({
-      Employee_ID: row.id,
-      First_Name: row.first_name,
-      Last_Name: row.last_name,
-      Title: row.title,
-      Department: row.department,
-      Salary: row.salary,
-      Manager:
-        row.manager_first_name && row.manager_last_name
-          ? row.manager_first_name + " " + row.manager_last_name
-          : "No Manager", // Replace null manager info with "No Manager"
-    }));
+    const tableData = transformEmployeeDataForDisplay(employeeData);
 
-    // Add empty lines for spacing
-    console.log("\n");
+    // Display employee data
+    displayEmployeeTable(tableData);
 
-    // Display department data as a table and show the main menu
-    console.table(tableData);
     menu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
-
+//----------------------------------------------------------------
 // Add an employee based on user input
 async function addEmployee() {
   try {
@@ -462,7 +483,7 @@ async function addEmployee() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Update an employee's role based on user input
 async function updateEmployeeRole() {
   try {
@@ -512,7 +533,7 @@ async function updateEmployeeRole() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
 
 // Update an employee's manager
@@ -570,7 +591,7 @@ async function updateEmployeeManager() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // View employees by manager
 async function viewEmployeesByManager() {
   try {
@@ -653,7 +674,7 @@ async function viewEmployeesByManager() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // View employees by department
 async function viewEmployeesByDepartment() {
   try {
@@ -704,7 +725,7 @@ async function viewEmployeesByDepartment() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Modify the viewDepartmentBudget function
 async function viewDepartmentBudget() {
   try {
@@ -739,7 +760,7 @@ async function viewDepartmentBudget() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Delete by department
 async function deleteDepartment() {
   try {
@@ -784,7 +805,7 @@ async function deleteDepartment() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Delete a role
 async function deleteRole() {
   try {
@@ -829,7 +850,7 @@ async function deleteRole() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Delete an employee
 async function deleteEmployee() {
   try {
@@ -874,6 +895,6 @@ async function deleteEmployee() {
     menu();
   }
 }
-
+//----------------------------------------------------------------
 // Export the generateHeader function to be used in index.js
 module.exports = { generateHeader, menu };
