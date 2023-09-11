@@ -162,7 +162,7 @@ class Employee {
   }
 
   // Method to delete an employee by its ID
-  deleteEmployeeById(employeeId) {
+  deleteEmployeeByIdQuery(employeeId) {
     return new Promise((resolve, reject) => {
       // SQL query to delete an employee by its ID
       const queryString = `

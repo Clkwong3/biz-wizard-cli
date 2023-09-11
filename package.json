@@ -1,4 +1,14 @@
 {
+  "name": "biz-wizard-cli",
+  "version": "1.0.0",
+  "description": "Create a command-line application using Node.js, Inquirer, and MySQL that enables a user to manage a database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "console.table": "^0.10.0",
     "inquirer": "^8.2.4",

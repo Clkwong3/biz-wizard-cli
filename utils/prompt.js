@@ -3,7 +3,7 @@ const inquirer = require("inquirer");
 const connection = require("../db/config"); // Database configuration
 const data = require("./department"); // Import data functions from the department module
 const role = require("./role"); // Import role functions from the role module
-
+const employee = require("./employee"); // Import employee functions from the employee module
 require("console.table"); // Import console.table for displaying data in tabular format
 
 // Display the main menu, handle user choices, and manage program flow
@@ -225,7 +225,331 @@ async function addRole() {
   }
 }
 
+// Display all employees
+async function viewAllEmployees() {
+  try {
+    // Fetch all employee data from the employee module
+    const moduleData = await employee.viewAllEmployeesQuery();
+
+    // Transform the data for display
+    const tableData = moduleData.map((row) => ({
+      Employee_ID: row.id,
+      First_Name: row.first_name,
+      Last_Name: row.last_name,
+      Title: row.title,
+      Department: row.department,
+      Salary: row.salary,
+      Manager:
+        row.manager_first_name && row.manager_last_name
+          ? row.manager_first_name + " " + row.manager_last_name
+          : "No Manager", // Replace null manager info with "No Manager"
+    }));
+
+    // Display department data as a table and show the main menu
+    console.table(tableData);
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// Add an employee based on user input
+async function addEmployee() {
+  try {
+    // Fetch roles and existing employees
+    const roles = await role.viewAllRolesQuery();
+    const employees = await employee.viewAllEmployeesQuery();
+
+    // Create user choices for roles
+    const roleChoices = roles.map((role) => ({
+      name: role.title,
+      value: role.id,
+    }));
+
+    // Create manager choices for employees without a manager (null value)
+    const managerChoices = employees
+      .filter(
+        (employee) =>
+          !employee.manager_first_name || !employee.manager_last_name
+      ) // Filter employees without a manager
+      .map((employee) => ({
+        name: `${employee.first_name} ${employee.last_name}`,
+        value: employee.id,
+      }));
+
+    // Add the "No Manager" option to the managerChoices array
+    managerChoices.unshift({ name: "No Manager", value: null });
+
+    // Prompt for employee details
+    const userInputs = await inquirer.prompt([
+      {
+        type: "input",
+        message: "First name:",
+        name: "firstName",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter the first name." : true,
+      },
+      {
+        type: "input",
+        message: "Last name:",
+        name: "lastName",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter the last name." : true,
+      },
+      {
+        type: "list",
+        message: "Select the role:",
+        name: "roleId",
+        choices: roleChoices,
+      },
+      {
+        type: "list",
+        message: "Select the manager (if applicable):",
+        name: "managerId",
+        choices: managerChoices,
+      },
+    ]);
+
+    // Log the selected managerId
+    console.log("Selected Manager ID:", userInputs.managerId);
+
+    // Add an employee with provided details
+    await employee.addEmployeeQuery(
+      userInputs.firstName,
+      userInputs.lastName,
+      userInputs.roleId,
+      userInputs.managerId
+    );
+
+    // Log a success message and show the main menu
+    console.log("Employee Added");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// Update an employee's role based on user input
+async function updateEmployeeRole() {
+  try {
+    // Fetch a list of employees and roles to choose from
+    const employees = await employee.viewAllEmployeesQuery();
+    const roles = await role.viewAllRolesQuery();
+
+    // Define choices for employees and roles
+    const employeeChoice = employees.map((emp) => ({
+      name: `${emp.first_name} ${emp.last_name}`,
+      value: emp.id,
+    }));
+
+    const roleChoice = roles.map((role) => ({
+      name: role.title,
+      value: role.id,
+    }));
+
+    // Prompt the user for employee and new role details
+    const res = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select the employee you want to update:",
+        name: "employeeId",
+        choices: employeeChoice,
+      },
+      {
+        type: "list",
+        message: "Select the new role for the employee:",
+        name: "newRoleId",
+        choices: roleChoice,
+      },
+    ]);
+
+    // Call the function to update the employee's role
+    await employee.updateEmployeeRoleQuery(res.employeeId, res.newRoleId);
+
+    // Log a success message and show the main menu
+    console.log("Employee Role Updated");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
 // BONUS FUNCTIONS STARTS HERE
+
+// Update an employee's manager
+async function updateEmployeeManager() {
+  try {
+    // Fetch a list of employees to choose from
+    const employees = await employee.viewAllEmployeesQuery();
+
+    // Create user choices for selecting an employee and a new manager
+    const employeeChoices = employees.map((emp) => ({
+      name: `${emp.first_name} ${emp.last_name}`,
+      value: emp.id,
+    }));
+
+    // Prompt for the employee to update and their new manager
+    const userInput = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select the employee you want to update:",
+        name: "employeeId",
+        choices: employeeChoices,
+      },
+      {
+        type: "list",
+        message: "Select the new manager for the employee:",
+        name: "managerId",
+        choices: employeeChoices,
+      },
+    ]);
+
+    // Call the function to update the employee's manager
+    await employee.updateEmployeeManagerQuery(
+      userInput.employeeId,
+      userInput.managerId
+    );
+
+    // Log a success message and show the main menu
+    console.log("Employee Manager Updated");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// View employees by manager
+async function viewEmployeesByManager() {
+  try {
+    // Fetch a list of employees to choose from
+    const employees = await employee.viewAllEmployeesQuery();
+
+    // Create an array to store manager names and their corresponding manager IDs
+    const managerChoicesArray = [];
+    const managerIdMap = {};
+
+    // Populate the managerChoicesArray and managerIdMap
+    employees.forEach((emp) => {
+      if (
+        emp.manager_first_name &&
+        emp.manager_last_name &&
+        emp.id !== emp.manager_id
+      ) {
+        const managerName = `${emp.manager_first_name} ${emp.manager_last_name}`;
+        if (!managerIdMap[managerName]) {
+          managerIdMap[managerName] = managerIdMap[managerName]
+            ? [...managerIdMap[managerName], emp.manager_id]
+            : [emp.manager_id];
+          managerChoicesArray.push(managerName);
+        }
+      }
+    });
+
+    // Modify the creation of managerChoices to include unique managers
+    const managerChoices = [...new Set(managerChoicesArray)].map((manager) => ({
+      name: manager,
+      value: managerIdMap[manager],
+    }));
+
+    // Prompt for selecting a manager
+    const userInput = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select a manager to view their employees:",
+        name: "managerId",
+        choices: managerChoices,
+      },
+    ]);
+
+    // Filter employees based on the selected manager
+    const employeesByManager = employees.filter((emp) => {
+      const managerName = `${emp.manager_first_name} ${emp.manager_last_name}`;
+      return managerIdMap[managerName] === userInput.managerId;
+    });
+
+    if (employeesByManager.length === 0) {
+      console.log("No employees found for this manager.");
+    } else {
+      // Display employees managed by the selected manager
+      console.table(
+        employeesByManager.map((emp) => ({
+          id: emp.id,
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          title: emp.title,
+          department: emp.department,
+          salary: emp.salary,
+        }))
+      );
+    }
+
+    // Show the main menu
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// View employees by department
+async function viewEmployeesByDepartment() {
+  try {
+    // Fetch a list of departments to choose from
+    const departments = await data.viewAllDepartmentsQuery();
+
+    // Create user choices for selecting a department
+    const departmentChoices = departments.map((dept) => ({
+      name: dept.name,
+      value: dept.id,
+    }));
+
+    // Prompt for selecting a department
+    const userInput = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select a department to view its employees:",
+        name: "departmentId",
+        choices: departmentChoices,
+      },
+    ]);
+
+    // Fetch all employees in the selected department
+    const employeesByDepartment = await employee.viewEmployeesByDepartmentQuery(
+      userInput.departmentId
+    );
+
+    if (employeesByDepartment.length === 0) {
+      console.log("No employees found for this department.");
+    } else {
+      // Display employees in the selected department
+      console.table(
+        employeesByDepartment.map((emp) => ({
+          id: emp.id,
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          title: emp.title,
+          salary: emp.salary,
+        }))
+      );
+    }
+
+    // Show the main menu
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
 
 // Modify the viewDepartmentBudget function
 async function viewDepartmentBudget() {
@@ -344,6 +668,51 @@ async function deleteRole() {
 
     // Log a success message and show the main menu
     console.log("Role Deleted");
+    menu();
+  } catch (err) {
+    // Handle and log errors, then show the main menu
+    console.error(err);
+    menu();
+  }
+}
+
+// Delete an employee
+async function deleteEmployee() {
+  try {
+    // Fetch all employee data from the database using the correct module (employee)
+    const employees = await employee.viewAllEmployeesQuery();
+
+    // Create an array of employees choices based on the available Employee IDs
+    const employeeChoices = employees.map((employee) => ({
+      name: `${employee.id} - ${employee.first_name} ${employee.last_name}`,
+      value: employee.id,
+    }));
+
+    // Add a "Cancel" option to the list of choices
+    employeeChoices.push({ name: "Cancel", value: "cancel" });
+
+    // Prompt the user to select the Employee to delete
+    const res = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select an Employee to delete:",
+        name: "employeeId",
+        choices: employeeChoices,
+      },
+    ]);
+
+    // Check if the user selected "Cancel"
+    if (res.employeeId === "cancel") {
+      console.log("Operation canceled. Going back to the main menu.");
+      menu(); // Go back to the main menu
+      return; // Exit the function
+    }
+
+    // Call the deleteEmployeeById method with the provided employee ID
+    await employee.deleteEmployeeByIdQuery(res.employeeId);
+
+    // Log a success message and show the main menu
+    console.log("Employee Deleted");
     menu();
   } catch (err) {
     // Handle and log errors, then show the main menu
