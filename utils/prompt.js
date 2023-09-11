@@ -1,13 +1,33 @@
 // Import required modules and functions
 const inquirer = require("inquirer");
+const figlet = require("figlet");
+const util = require("util"); // Import the 'util' module for promisify
+require("console.table"); // Import console.table for displaying data in tabular format
+
 const connection = require("../db/config"); // Database configuration
 const data = require("./department"); // Import data functions from the department module
 const role = require("./role"); // Import role functions from the role module
 const employee = require("./employee"); // Import employee functions from the employee module
-require("console.table"); // Import console.table for displaying data in tabular format
 
+// Promisify the figlet function to use async/await
+const figletAsync = util.promisify(figlet);
+
+// Function to generate the header
+async function generateHeader() {
+  try {
+    // Use async/await to generate the header text
+    const header = await figletAsync("Employer Tracker");
+    return header;
+  } catch (err) {
+    console.log("Error:", err); // Log any errors
+    return null;
+  }
+}
 // Display the main menu, handle user choices, and manage program flow
 function menu() {
+  // Display the header
+  generateHeader();
+
   // Prompt the user to select an option from the menu
   inquirer
     .prompt([
@@ -32,7 +52,7 @@ function menu() {
           "Delete a department",
           "Delete a role",
           "Delete an employee",
-          "Exit Program",
+          "Close Program",
         ],
       },
     ])
@@ -81,21 +101,21 @@ function menu() {
         case "Delete an employee":
           deleteEmployee();
           break;
-        case "Exit Program":
-          exitProgram();
+        case "Close Program":
+          closeProgram();
           break;
       }
     });
 }
 
 // Function to handle program exit
-function exitProgram() {
+function closeProgram() {
   // Display a goodbye message and close the database connection
   console.log("Thank you for using Employee Tracker. Goodbye! 👋");
-
   connection.end((err) => {
     if (err) {
       console.error("Error closing the database connection:", err);
+      return;
     } else {
       console.log("Database connection closed.");
     }
@@ -764,5 +784,5 @@ async function deleteEmployee() {
   }
 }
 
-// Export the menu function to be used in other modules
-module.exports = { menu };
+// Export the generateHeader function to be used in index.js
+module.exports = { generateHeader, menu };

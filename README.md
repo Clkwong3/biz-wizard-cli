@@ -17,10 +17,12 @@ This application creates a command-line interface for managing departments, role
 
 ## Installation
 
-- Node.js
-- MySQL Database [provide the database connection details (host, username, password) in db/config.js]
-- MySQL2 [npm install mysql2]
+- console.table
 - Inquirer 8.2.4
+- Figlet
+- MySQL2 [npm install mysql2]
+- Node.js
+- Util
 
 ## Usage
 
@@ -39,6 +41,10 @@ This application creates a command-line interface for managing departments, role
 Follow the instructions above then verify that the changes have been made in your MySQL database
 
 ## Screenshot
+
+figlet-header:
+
+![figlet-header](./screenshots/figlet-header.png)
 
 npm console.table:
 
