@@ -92,6 +92,7 @@ function menu() {
 function exitProgram() {
   // Display a goodbye message and close the database connection
   console.log("Thank you for using Employee Tracker. Goodbye! 👋");
+
   connection.end((err) => {
     if (err) {
       console.error("Error closing the database connection:", err);
@@ -112,6 +113,9 @@ async function viewAllDepartments() {
       Department_ID: row.id,
       Department_Name: row.name,
     }));
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Display department data as a table and show the main menu
     console.table(tableData);
@@ -140,6 +144,9 @@ async function addDepartment() {
     // Call the method to add a department with the provided name
     await data.addDepartmentQuery(res.name);
 
+    // Add empty lines for spacing
+    console.log("\n");
+
     // Log a success message and show the main menu
     console.log("Department Added");
     menu();
@@ -163,6 +170,9 @@ async function viewAllRoles() {
       Salary: row.salary,
       Department_Name: row.department_name,
     }));
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Display department data as a table and show the main menu
     console.table(tableData);
@@ -215,6 +225,9 @@ async function addRole() {
     // Add a role with provided details
     await role.addRoleQuery(res.title, res.salary, res.departmentId);
 
+    // Add empty lines for spacing
+    console.log("\n");
+
     // Log a success message and show the main menu
     console.log("Role Added");
     menu();
@@ -244,6 +257,9 @@ async function viewAllEmployees() {
           ? row.manager_first_name + " " + row.manager_last_name
           : "No Manager", // Replace null manager info with "No Manager"
     }));
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Display department data as a table and show the main menu
     console.table(tableData);
@@ -323,6 +339,9 @@ async function addEmployee() {
       userInputs.managerId
     );
 
+    // Add empty lines for spacing
+    console.log("\n");
+
     // Log a success message and show the main menu
     console.log("Employee Added");
     menu();
@@ -370,6 +389,9 @@ async function updateEmployeeRole() {
     // Call the function to update the employee's role
     await employee.updateEmployeeRoleQuery(res.employeeId, res.newRoleId);
 
+    // Add empty lines for spacing
+    console.log("\n");
+
     // Log a success message and show the main menu
     console.log("Employee Role Updated");
     menu();
@@ -394,7 +416,7 @@ async function updateEmployeeManager() {
       value: emp.id,
     }));
 
-    // Prompt for the employee to update and their new manager
+    // Prompt for the employee to update
     const userInput = await inquirer.prompt([
       {
         type: "list",
@@ -402,19 +424,31 @@ async function updateEmployeeManager() {
         name: "employeeId",
         choices: employeeChoices,
       },
+    ]);
+
+    // Filter out the selected employee from the choices for the new manager
+    const managerChoices = employeeChoices.filter(
+      (choice) => choice.value !== userInput.employeeId
+    );
+
+    // Prompt for selecting the new manager for the employee
+    const managerInput = await inquirer.prompt([
       {
         type: "list",
         message: "Select the new manager for the employee:",
         name: "managerId",
-        choices: employeeChoices,
+        choices: managerChoices,
       },
     ]);
 
     // Call the function to update the employee's manager
     await employee.updateEmployeeManagerQuery(
       userInput.employeeId,
-      userInput.managerId
+      managerInput.managerId
     );
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Log a success message and show the main menu
     console.log("Employee Manager Updated");
@@ -459,6 +493,9 @@ async function viewEmployeesByManager() {
       value: managerIdMap[manager],
     }));
 
+    // Add empty lines for spacing
+    console.log("\n");
+
     // Prompt for selecting a manager
     const userInput = await inquirer.prompt([
       {
@@ -468,6 +505,9 @@ async function viewEmployeesByManager() {
         choices: managerChoices,
       },
     ]);
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Filter employees based on the selected manager
     const employeesByManager = employees.filter((emp) => {
@@ -490,6 +530,9 @@ async function viewEmployeesByManager() {
         }))
       );
     }
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Show the main menu
     menu();
