@@ -160,7 +160,7 @@ function displayTable(data) {
   console.table(data);
 }
 
-// View all departments
+// Retrieve and display all department data
 async function viewAllDepartments() {
   try {
     // Fetch department data
@@ -220,30 +220,52 @@ async function addDepartment() {
   }
 }
 
-// Retrieve role data and display it
+// Fetch all role data from the role module
+async function fetchRoleData() {
+  try {
+    return await role.viewAllRolesQuery();
+  } catch (err) {
+    throw err; // Re-throw the error
+  }
+}
+
+// Transform role data for display
+function transformRoleDataForDisplay(role) {
+  return role.map((row) => ({
+    Role_ID: row.id,
+    Role_Title: row.title,
+    Salary: row.salary,
+    Department_name: row.department_name,
+  }));
+}
+
+// Display role data as a table
+function displayRoleTable(role) {
+  // Add empty lines for spacing
+  console.log("\n");
+
+  // Display department data as a table
+  console.table(role);
+}
+
+// Retrieve and display all role data
 async function viewAllRoles() {
   try {
-    // Fetch all role data from the role module
-    const moduleData = await role.viewAllRolesQuery();
+    // Fetch all role data
+    const roleData = await fetchRoleData();
 
-    // Transform the data for display
-    const tableData = moduleData.map((row) => ({
-      Role_ID: row.id,
-      Role_Title: row.title,
-      Salary: row.salary,
-      Department_Name: row.department_name,
-    }));
+    // Transform data for display
+    const tableData = transformRoleDataForDisplay(roleData);
 
-    // Add empty lines for spacing
-    console.log("\n");
+    // Display role data
+    displayRoleTable(tableData);
 
-    // Display department data as a table and show the main menu
-    console.table(tableData);
-    menu();
+    // Show the main menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 
