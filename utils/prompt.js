@@ -580,48 +580,73 @@ async function updateEmployeeRole() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
+//------------------ Update Employee's Manager -------------------------------------------
+// Filter out the selected employee from manager choices
+function filterManagerChoices(managerChoices, selectedEmployeeId) {
+  return managerChoices.filter((choice) => choice.value !== selectedEmployeeId);
+}
 
 // Update an employee's manager
+async function updateEmployeeManagerWithDetails(employeeId, newManagerId) {
+  try {
+    await employee.updateEmployeeManagerQuery(employeeId, newManagerId);
+    console.log("Employee Manager Updated");
+  } catch (err) {
+    throw err; // Re-throw the error for higher-level handling
+  }
+}
+
+// Prompt for selecting an employee to update
+async function promptForEmployeeToUpdate(employeeChoices) {
+  const userInput = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Select the employee you want to update:",
+      name: "employeeId",
+      choices: employeeChoices,
+    },
+  ]);
+  return userInput;
+}
+
+// Function to prompt for selecting a new manager for the employee
+async function promptForNewManager(managerChoices) {
+  const managerInput = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Select the new manager for the employee:",
+      name: "managerId",
+      choices: managerChoices,
+    },
+  ]);
+  return managerInput;
+}
+
+// Combined function to update an employee's manager based on user input
 async function updateEmployeeManager() {
   try {
-    // Fetch a list of employees to choose from
-    const employees = await employee.viewAllEmployeesQuery();
+    // Fetch a list of employees
+    const employees = await fetchEmployeeData();
 
-    // Create user choices for selecting an employee and a new manager
-    const employeeChoices = employees.map((emp) => ({
-      name: `${emp.first_name} ${emp.last_name}`,
-      value: emp.id,
-    }));
+    // Create user choices for selecting an employee
+    const employeeChoices = createUserEmployeeChoices(employees);
 
-    // Prompt for the employee to update
-    const userInput = await inquirer.prompt([
-      {
-        type: "list",
-        message: "Select the employee you want to update:",
-        name: "employeeId",
-        choices: employeeChoices,
-      },
-    ]);
+    // Prompt for selecting an employee to update
+    const userInput = await promptForEmployeeToUpdate(employeeChoices);
 
-    // Filter out the selected employee from the choices for the new manager
-    const managerChoices = employeeChoices.filter(
-      (choice) => choice.value !== userInput.employeeId
+    // Filter out the selected employee from manager choices
+    const managerChoices = filterManagerChoices(
+      employeeChoices,
+      userInput.employeeId
     );
 
-    // Prompt for selecting the new manager for the employee
-    const managerInput = await inquirer.prompt([
-      {
-        type: "list",
-        message: "Select the new manager for the employee:",
-        name: "managerId",
-        choices: managerChoices,
-      },
-    ]);
+    // Prompt for selecting a new manager for the employee
+    const managerInput = await promptForNewManager(managerChoices);
 
-    // Call the function to update the employee's manager
-    await employee.updateEmployeeManagerQuery(
+    // Update the employee's manager with provided details
+    await updateEmployeeManagerWithDetails(
       userInput.employeeId,
       managerInput.managerId
     );
@@ -629,13 +654,12 @@ async function updateEmployeeManager() {
     // Add empty lines for spacing
     console.log("\n");
 
-    // Log a success message and show the main menu
-    console.log("Employee Manager Updated");
-    menu();
+    // Show the main menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------
