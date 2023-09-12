@@ -2,7 +2,7 @@
 
 Workforce Navigator is a command-line application built with Node.js, Inquirer, and MySQL, designed to help efficiently manage an organization's workforce. From viewing and updating an employee's information to calculating a department's salary, Workforce Navigator simplifies these tasks, providing a user-friendly interface right into the local terminal.
 
-## Description
+## Features
 
 With Workforce Navigator, you can:
 
