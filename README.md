@@ -133,7 +133,7 @@ npm console.table:
 
 Here is the Demo Video for this project:
 
-- Walkthrough Video: [screencastify](https://example.com)
+- Walkthrough Video: [screencastify](https://drive.google.com/file/d/1RQC82koq08hz3Hxy_oUFY9_IIJ0LIEPV/view)
 
 ## Contact Me
 
