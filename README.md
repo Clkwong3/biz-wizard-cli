@@ -128,6 +128,6 @@ Here is the Demo Video for this project:
 
 ## Contact Me
 
-If you encounter any issues, please report them on the project's [GitHub repository](https://github.com/Clkwong3/biz-wizard-cli).
+If you encounter any issues, please report them on the project's [GitHub repository](https://github.com/Clkwong3/workforce-navigator).
 
 You can also connect with me on [GitHub](https://github.com/Clkwong3).
