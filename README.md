@@ -1,10 +1,19 @@
-# biz-wizard-cli
+# workforce-navigator
 
-Create a command-line application using Node.js, Inquirer, and MySQL that enables a user to manage a database
+Workforce Navigator is a command-line application built with Node.js, Inquirer, and MySQL, designed to help efficiently manage an organization's workforce. From viewing and updating an employee's information to calculating a department's salary, Workforce Navigator simplifies these tasks, providing a user-friendly interface right into the local terminal.
 
 ## Description
 
-This application creates a command-line interface for managing departments, roles, and employees in a company. Users can view, add, and update records in the database through a user-friendly interface.
+With Workforce Navigator, you can:
+
+- View and update employee details, including names, roles, and managers.
+- Assign roles to employees and adjust them as the organization evolves.
+- Calculate total departmental salaries at a glance.
+- Seamlessly interact with the MySQL database, making it easy to keep the workforce information up-to-date.
+
+Take control of a organization's workforce management with Workforce Navigator.
+
+Start streamlining the HR and employee management processes today!
 
 ## Table of Contents
 
