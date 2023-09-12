@@ -26,8 +26,7 @@ async function generateHeader() {
 
 // Display the main menu, handle user choices, and manage program flow
 function menu() {
-  // Display the header
-  generateHeader();
+  generateHeader(); // Display the header
 
   // Prompt the user to select an option from the menu
   inquirer
@@ -123,7 +122,7 @@ function closeProgram() {
   });
 }
 //----------------------------------------------------------------
-// Handle errors
+// Error handling function
 function handleError(err) {
   // Handle and log errors
   console.error(err);
@@ -133,7 +132,7 @@ function handleError(err) {
 function showMainMenu() {
   menu();
 }
-//----------------------------------------------------------------
+//------------------ View All Departments -------------------------------------------
 // Fetch department data from data module
 async function fetchDepartmentData() {
   try {
@@ -180,7 +179,7 @@ async function viewAllDepartments() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ Add Departments -------------------------------------------
 // Prompt the user for a department name
 async function promptForDepartmentName() {
   const answers = await inquirer.prompt([
@@ -222,7 +221,7 @@ async function addDepartment() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ View All Roles -------------------------------------------
 // Fetch all role data from the role module
 async function fetchRoleData() {
   try {
@@ -271,7 +270,7 @@ async function viewAllRoles() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ Add Roles -------------------------------------------
 // Fetch department data for user choices
 async function fetchDepartmentsForChoices() {
   try {
@@ -338,10 +337,14 @@ async function addRole() {
     const departmentChoices = createDepartmentChoices(departments);
 
     // Prompt user for role details
-    const answer = await promptForRoleDetails(departmentChoices);
+    const answers = await promptForRoleDetails(departmentChoices);
 
     // Add a role with provided details
-    await addRoleWithDetails(answer.title, answer.salary, answer.departmentId);
+    await addRoleWithDetails(
+      answers.title,
+      answers.salary,
+      answers.departmentId
+    );
 
     // Show the main menu
     showMainMenu();
@@ -351,7 +354,7 @@ async function addRole() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ View All Employees -------------------------------------------
 // Fetch all employee data from employee module
 async function fetchEmployeeData() {
   try {
@@ -405,85 +408,128 @@ async function viewAllEmployees() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
-// Add an employee based on user input
+//------------------ Add Employees -------------------------------------------
+// Fetch roles from the role module
+async function fetchRoles() {
+  try {
+    return await role.viewAllRolesQuery();
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Fetch existing employees from the employee module
+async function fetchExistingEmployees() {
+  try {
+    return await employee.viewAllEmployeesQuery();
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Create user choices for roles
+function createUserRoleChoices(roles) {
+  return roles.map((role) => ({
+    name: role.title,
+    value: role.id,
+  }));
+}
+
+// Create user choices for managers (including "No Manager" option)
+function createUserManagerChoices(employees) {
+  const managerChoices = employees
+    .filter(
+      (employee) => !employee.manager_first_name || !employee.manager_last_name
+    )
+    .map((employee) => ({
+      name: `${employee.first_name} ${employee.last_name}`,
+      value: employee.id,
+    }));
+
+  // Add the "No Manager" option to the managerChoices array
+  managerChoices.unshift({ name: "No Manager", value: null });
+
+  return managerChoices;
+}
+
+// Prompt the user for employee details
+async function promptForEmployeeDetails(roleChoices, managerChoices) {
+  const userInputs = await inquirer.prompt([
+    {
+      type: "input",
+      message: "First name:",
+      name: "firstName",
+      validate: (value) =>
+        value.trim() === "" ? "Please enter the first name." : true,
+    },
+    {
+      type: "input",
+      message: "Last name:",
+      name: "lastName",
+      validate: (value) =>
+        value.trim() === "" ? "Please enter the last name." : true,
+    },
+    {
+      type: "list",
+      message: "Select the role:",
+      name: "roleId",
+      choices: roleChoices,
+    },
+    {
+      type: "list",
+      message: "Select the manager (if applicable):",
+      name: "managerId",
+      choices: managerChoices,
+    },
+  ]);
+
+  return userInputs;
+}
+
+// Add an employee with provided details
+async function addEmployeeWithDetails(firstName, lastName, roleId, managerId) {
+  try {
+    await employee.addEmployeeQuery(firstName, lastName, roleId, managerId);
+    console.log("Employee Added");
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Add a new employee based on user input
 async function addEmployee() {
   try {
     // Fetch roles and existing employees
-    const roles = await role.viewAllRolesQuery();
-    const employees = await employee.viewAllEmployeesQuery();
+    const roles = await fetchRoles();
+    const employees = await fetchExistingEmployees();
 
-    // Create user choices for roles
-    const roleChoices = roles.map((role) => ({
-      name: role.title,
-      value: role.id,
-    }));
-
-    // Create manager choices for employees without a manager (null value)
-    const managerChoices = employees
-      .filter(
-        (employee) =>
-          !employee.manager_first_name || !employee.manager_last_name
-      ) // Filter employees without a manager
-      .map((employee) => ({
-        name: `${employee.first_name} ${employee.last_name}`,
-        value: employee.id,
-      }));
-
-    // Add the "No Manager" option to the managerChoices array
-    managerChoices.unshift({ name: "No Manager", value: null });
+    // Create user choices for roles and managers
+    const roleChoices = createUserRoleChoices(roles);
+    const managerChoices = createUserManagerChoices(employees);
 
     // Prompt for employee details
-    const userInputs = await inquirer.prompt([
-      {
-        type: "input",
-        message: "First name:",
-        name: "firstName",
-        validate: (value) =>
-          value.trim() === "" ? "Please enter the first name." : true,
-      },
-      {
-        type: "input",
-        message: "Last name:",
-        name: "lastName",
-        validate: (value) =>
-          value.trim() === "" ? "Please enter the last name." : true,
-      },
-      {
-        type: "list",
-        message: "Select the role:",
-        name: "roleId",
-        choices: roleChoices,
-      },
-      {
-        type: "list",
-        message: "Select the manager (if applicable):",
-        name: "managerId",
-        choices: managerChoices,
-      },
-    ]);
+    const userInputs = await promptForEmployeeDetails(
+      roleChoices,
+      managerChoices
+    );
 
     // Add an employee with provided details
-    await employee.addEmployeeQuery(
+    await addEmployeeWithDetails(
       userInputs.firstName,
       userInputs.lastName,
       userInputs.roleId,
       userInputs.managerId
     );
 
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Log a success message and show the main menu
-    console.log("Employee Added");
-    menu();
+    // Show the main menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ Update Employee's Role -------------------------------------------
 // Update an employee's role based on user input
 async function updateEmployeeRole() {
   try {
@@ -521,9 +567,6 @@ async function updateEmployeeRole() {
     // Call the function to update the employee's role
     await employee.updateEmployeeRoleQuery(res.employeeId, res.newRoleId);
 
-    // Add empty lines for spacing
-    console.log("\n");
-
     // Log a success message and show the main menu
     console.log("Employee Role Updated");
     menu();
@@ -533,6 +576,7 @@ async function updateEmployeeRole() {
     menu();
   }
 }
+
 //----------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
 
