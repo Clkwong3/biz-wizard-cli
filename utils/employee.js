@@ -25,18 +25,18 @@ class Employee {
   async viewAllEmployeesQuery(departmentId = null) {
     try {
       let queryString = `
-        SELECT employee.id,
+        SELECT 
+          employee.id,
           employee.first_name,
           employee.last_name,
           role.title AS title,
           department.name AS department,
           role.salary AS salary,
-          manager.first_name AS manager_first_name,
-          manager.last_name AS manager_last_name
+          CONCAT(manager.first_name, ' ', manager.last_name) AS manager
         FROM employee
-          LEFT JOIN role ON employee.role_id = role.id
-          LEFT JOIN department ON role.department_id = department.id
-          LEFT JOIN employee AS manager ON manager.id = employee.manager_id
+        LEFT JOIN role ON employee.role_id = role.id
+        LEFT JOIN department ON role.department_id = department.id
+        LEFT JOIN employee AS manager ON manager.id = employee.manager_id
       `;
 
       if (departmentId !== null) {
