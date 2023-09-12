@@ -227,7 +227,7 @@ async function fetchRoleData() {
   try {
     return await role.viewAllRolesQuery();
   } catch (err) {
-    throw err; // Re-throw the error
+    throw err;
   }
 }
 
@@ -409,24 +409,6 @@ async function viewAllEmployees() {
   }
 }
 //------------------ Add Employees -------------------------------------------
-// Fetch roles from the role module
-async function fetchRoles() {
-  try {
-    return await role.viewAllRolesQuery();
-  } catch (err) {
-    throw err;
-  }
-}
-
-// Fetch existing employees from the employee module
-async function fetchExistingEmployees() {
-  try {
-    return await employee.viewAllEmployeesQuery();
-  } catch (err) {
-    throw err;
-  }
-}
-
 // Create user choices for roles
 function createUserRoleChoices(roles) {
   return roles.map((role) => ({
@@ -500,8 +482,8 @@ async function addEmployeeWithDetails(firstName, lastName, roleId, managerId) {
 async function addEmployee() {
   try {
     // Fetch roles and existing employees
-    const roles = await fetchRoles();
-    const employees = await fetchExistingEmployees();
+    const roles = await fetchRoleData();
+    const employees = await fetchEmployeeData();
 
     // Create user choices for roles and managers
     const roleChoices = createUserRoleChoices(roles);
@@ -530,53 +512,74 @@ async function addEmployee() {
   }
 }
 //------------------ Update Employee's Role -------------------------------------------
-// Update an employee's role based on user input
-async function updateEmployeeRole() {
+// Create user choices for employees
+function createUserEmployeeChoices(employee) {
+  return employee.map((employee) => ({
+    name: `${employee.first_name} ${employee.last_name}`,
+    value: employee.id,
+  }));
+}
+
+// Prompt the user for employee and new role details
+async function promptForEmployeeAndRole(employeeChoices, roleChoices) {
+  const answers = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Select the employee you want to update:",
+      name: "employeeId",
+      choices: employeeChoices,
+    },
+    {
+      type: "list",
+      message: "Select the new role for the employee:",
+      name: "newRoleId",
+      choices: roleChoices,
+    },
+  ]);
+  return answers;
+}
+
+// Update an employee's role
+async function updateEmployeeRoleWithDetails(employeeId, newRoleId) {
   try {
-    // Fetch a list of employees and roles to choose from
-    const employees = await employee.viewAllEmployeesQuery();
-    const roles = await role.viewAllRolesQuery();
-
-    // Define choices for employees and roles
-    const employeeChoice = employees.map((emp) => ({
-      name: `${emp.first_name} ${emp.last_name}`,
-      value: emp.id,
-    }));
-
-    const roleChoice = roles.map((role) => ({
-      name: role.title,
-      value: role.id,
-    }));
-
-    // Prompt the user for employee and new role details
-    const res = await inquirer.prompt([
-      {
-        type: "list",
-        message: "Select the employee you want to update:",
-        name: "employeeId",
-        choices: employeeChoice,
-      },
-      {
-        type: "list",
-        message: "Select the new role for the employee:",
-        name: "newRoleId",
-        choices: roleChoice,
-      },
-    ]);
-
-    // Call the function to update the employee's role
-    await employee.updateEmployeeRoleQuery(res.employeeId, res.newRoleId);
-
-    // Log a success message and show the main menu
+    await employee.updateEmployeeRoleQuery(employeeId, newRoleId);
     console.log("Employee Role Updated");
-    menu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    throw err;
   }
 }
 
+// Update an employee's role based on user input
+async function updateEmployeeRole() {
+  try {
+    // Fetch a list of employees and roles
+    const employees = await fetchEmployeeData();
+    const roles = await fetchRoleData();
+
+    // Create user choices for employees and roles
+    const employeeChoices = createUserEmployeeChoices(employees);
+    const roleChoices = createUserRoleChoices(roles);
+
+    // Prompt the user for employee and new role details
+    const userInputs = await promptForEmployeeAndRole(
+      employeeChoices,
+      roleChoices
+    );
+
+    // Update the employee's role with provided details
+    await updateEmployeeRoleWithDetails(
+      userInputs.employeeId,
+      userInputs.newRoleId
+    );
+
+    // Show the main menu
+    showMainMenu();
+  } catch (err) {
+    // Handle errors
+    handleError(err);
+    showMainMenu();
+  }
+}
 //----------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
 
@@ -676,7 +679,8 @@ async function viewEmployeesByManager() {
     const userInput = await inquirer.prompt([
       {
         type: "list",
-        message: "Select a manager to view their employees:",
+        message:
+          "Select a manager to view their employees (Only managers with employees will show):",
         name: "managerId",
         choices: managerChoices,
       },
