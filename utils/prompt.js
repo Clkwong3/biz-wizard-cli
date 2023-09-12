@@ -357,10 +357,7 @@ function transformEmployeeDataForDisplay(employee) {
     Title: row.title,
     Department: row.department,
     Salary: row.salary,
-    Manager:
-      row.manager_first_name && row.manager_last_name
-        ? row.manager_first_name + " " + row.manager_last_name
-        : "No Manager", // Replace null manager info with "No Manager"
+    Manager: row.manager ? row.manager : "No Manager", // Replace null manager info with "No Manager"
   }));
 }
 
