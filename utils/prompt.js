@@ -722,12 +722,12 @@ function displayEmployees(employeesByManager) {
     // Display employees managed by the selected manager
     console.table(
       employeesByManager.map((emp) => ({
-        id: emp.id,
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-        title: emp.title,
-        department: emp.department,
-        salary: emp.salary,
+        ID: emp.id,
+        First_Name: emp.first_name,
+        Last_Name: emp.last_name,
+        Title: emp.title,
+        Department: emp.department,
+        Salary: emp.salary,
       }))
     );
   }
@@ -790,14 +790,16 @@ function displayEmployees(employees) {
   if (employees.length === 0) {
     console.log("No employees found for this department.");
   } else {
+    console.log("\n");
+
     // Display employees in the selected department
     console.table(
       employees.map((emp) => ({
-        id: emp.id,
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-        title: emp.title,
-        salary: emp.salary,
+        Id: emp.id,
+        First_Name: emp.first_name,
+        Last_Name: emp.last_name,
+        Title: emp.title,
+        Salary: emp.salary,
       }))
     );
   }
@@ -834,7 +836,7 @@ async function viewByDepartment() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
+//------------------ View Departments Budget ---------------------------------------
 // Modify the viewDepartmentBudget function
 async function viewDepartmentBudget() {
   try {
