@@ -4,13 +4,11 @@ const figlet = require("figlet");
 const util = require("util"); // Import the 'util' module for promisify
 require("console.table"); // Import console.table for displaying data in tabular format
 
+const figletAsync = util.promisify(figlet); // Promisify the figlet function to use async/await
 const connection = require("../db/config"); // Database configuration
 const data = require("./department"); // Import data functions from the department module
 const role = require("./role"); // Import role functions from the role module
 const employee = require("./employee"); // Import employee functions from the employee module
-
-// Promisify the figlet function to use async/await
-const figletAsync = util.promisify(figlet);
 
 // Function to generate the header
 async function generateHeader() {
@@ -121,7 +119,7 @@ function closeProgram() {
     }
   });
 }
-//----------------------------------------------------------------
+
 // Error handling function
 function handleError(err) {
   // Handle and log errors
@@ -200,7 +198,7 @@ async function addDepartmentWithName(name) {
     await data.addDepartmentQuery(name);
     console.log("\nDepartment Added Successfully\n");
   } catch (err) {
-    throw err; // Handle errors at a higher level
+    throw err;
   }
 }
 
@@ -216,7 +214,6 @@ async function addDepartment() {
     // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -262,10 +259,8 @@ async function viewAllRoles() {
     // Display role data
     displayRoleTable(tableData);
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -337,10 +332,8 @@ async function addRole() {
       answers.departmentId
     );
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -394,7 +387,6 @@ async function viewAllEmployees() {
 
     menu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -494,10 +486,8 @@ async function addEmployee() {
       userInputs.managerId
     );
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -563,10 +553,8 @@ async function updateEmployeeRole() {
       userInputs.newRoleId
     );
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -642,10 +630,8 @@ async function updateEmployeeManager() {
       managerInput.managerId
     );
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -746,10 +732,8 @@ async function viewByManager() {
     // Display employees managed by the selected manager
     displayEmployees(employeesByManager);
 
-    // Show the main menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -816,10 +800,8 @@ async function viewByDepartment() {
     // Display employees
     displayEmployees(employeesByDepartment);
 
-    // Show Main Menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -884,9 +866,8 @@ async function viewDepartmentBudget() {
     // Calculate and display the budget for the selected department
     await calculateAndDisplayBudget(departmentId);
 
-    menu();
+    showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -946,10 +927,8 @@ async function deleteDepartment() {
 
     console.log(`\nDepartment Deleted Successfully\n`);
 
-    // Show Main Menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
@@ -1070,10 +1049,8 @@ async function deleteEmployee() {
 
     console.log(`\nEmployee Deleted Successfully\n`);
 
-    // Show Main Menu
     showMainMenu();
   } catch (err) {
-    // Handle errors
     handleError(err);
     showMainMenu();
   }
