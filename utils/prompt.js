@@ -891,7 +891,7 @@ async function viewDepartmentBudget() {
     showMainMenu();
   }
 }
-//------------------ Delete by Department ------------------------------------
+//------------------ Delete a Department ------------------------------------
 // Create an array of department choices for the user
 function createDepartmentChoices(departments) {
   return departments.map((department) => ({
@@ -937,14 +937,14 @@ async function deleteDepartment() {
     const departmentId = await promptForDepartmentSelection(departmentChoices);
 
     if (departmentId === "cancel") {
-      console.log("Operation canceled. Going back to the main menu.");
+      console.log(`\nOperation canceled. Going back to the main menu.\n`);
       menu();
       return;
     }
 
     await deleteDepartmentById(departmentId);
 
-    console.log(`\nDepartment Deleted\n`);
+    console.log(`\nDepartment Deleted Successfully\n`);
 
     // Show Main Menu
     showMainMenu();
@@ -954,24 +954,21 @@ async function deleteDepartment() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
-// Delete a role
-async function deleteRole() {
+//------------------ Delete a Role ------------------------------------
+// Create an array of role choices based on Role IDs
+function createRoleChoices(roles) {
+  return roles.map((role) => ({
+    name: `${role.id} - ${role.title}`,
+    value: role.id,
+  }));
+}
+
+// Prompt the user to select the Role for deletion
+async function promptForRoleSelection(roleChoices) {
   try {
-    // Fetch all role data from the database
-    const roles = await role.viewAllRolesQuery();
-
-    // Create an array of role choices based on the available Role IDs
-    const roleChoices = roles.map((role) => ({
-      name: `${role.id} - ${role.title}`,
-      value: role.id,
-    }));
-
-    // Add a "Cancel" option to the list of choices
     roleChoices.push({ name: "Cancel", value: "cancel" });
 
-    // Prompt the user to select the Role to delete
-    const res = await inquirer.prompt([
+    const response = await inquirer.prompt([
       {
         type: "list",
         message: "Select the Role to delete:",
@@ -980,23 +977,42 @@ async function deleteRole() {
       },
     ]);
 
-    // Check if the user selected "Cancel"
-    if (res.roleId === "cancel") {
-      console.log("Operation canceled. Going back to the main menu.");
-      menu(); // Go back to the main menu
-      return; // Exit the function
+    return response.roleId;
+  } catch (err) {
+    throw err;
+  }
+}
+
+//Delete the role with the provided ID
+async function deleteRoleById(roleId) {
+  try {
+    await role.deleteRoleByIdQuery(roleId);
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Handle the deletion process
+async function deleteRole() {
+  try {
+    const roles = await fetchRoleData();
+    const roleChoices = createRoleChoices(roles);
+    const roleId = await promptForRoleSelection(roleChoices);
+
+    if (roleId === "cancel") {
+      console.log(`\nOperation canceled. Going back to the main menu.\n`);
+      menu();
+      return;
     }
 
-    // Call the deleteRoleById method with the provided role ID
-    await role.deleteRoleByIdQuery(res.roleId);
+    await deleteRoleById(roleId);
 
-    // Log a success message and show the main menu
-    console.log("Role Deleted");
-    menu();
+    console.log(`\nRole Deleted Successfully\n`);
+
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------
