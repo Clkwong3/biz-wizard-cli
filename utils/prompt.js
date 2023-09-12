@@ -271,15 +271,6 @@ async function viewAllRoles() {
   }
 }
 //------------------ Add Roles -------------------------------------------
-// Fetch department data for user choices
-async function fetchDepartmentsForChoices() {
-  try {
-    return await data.viewAllDepartmentsQuery();
-  } catch (err) {
-    throw err; // Re-throw error to a different function to deal with it furthur
-  }
-}
-
 // Create department choices for user
 function createDepartmentChoices(departments) {
   return departments.map((departments) => ({
@@ -331,7 +322,7 @@ async function addRoleWithDetails(title, salary, departmentId) {
 async function addRole() {
   try {
     // Fetch department data for user choice
-    const departments = await fetchDepartmentsForChoices();
+    const departments = await fetchDepartmentData();
 
     // Create department choices for user
     const departmentChoices = createDepartmentChoices(departments);
@@ -376,7 +367,7 @@ function transformEmployeeDataForDisplay(employee) {
     Manager:
       row.manager_first_name && row.manager_last_name
         ? row.manager_first_name + " " + row.manager_last_name
-        : "\nNo Manager\n", // Replace null manager info with "No Manager"
+        : "No Manager", // Replace null manager info with "No Manager"
   }));
 }
 
@@ -552,13 +543,13 @@ async function updateEmployeeRoleWithDetails(employeeId, newRoleId) {
 // Update an employee's role based on user input
 async function updateEmployeeRole() {
   try {
-    // Fetch a list of employees and roles
-    const employees = await fetchEmployeeData();
+    // Fetch a list of roles and employees
     const roles = await fetchRoleData();
+    const employees = await fetchEmployeeData();
 
-    // Create user choices for employees and roles
-    const employeeChoices = createUserEmployeeChoices(employees);
+    // Create user choices for roles and employees
     const roleChoices = createUserRoleChoices(roles);
+    const employeeChoices = createUserEmployeeChoices(employees);
 
     // Prompt the user for employee and new role details
     const userInputs = await promptForEmployeeAndRole(
@@ -583,21 +574,6 @@ async function updateEmployeeRole() {
 //----------------------------------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
 //------------------ Update Employee's Manager -------------------------------------------
-// Filter out the selected employee from manager choices
-function filterManagerChoices(managerChoices, selectedEmployeeId) {
-  return managerChoices.filter((choice) => choice.value !== selectedEmployeeId);
-}
-
-// Update an employee's manager
-async function updateEmployeeManagerWithDetails(employeeId, newManagerId) {
-  try {
-    await employee.updateEmployeeManagerQuery(employeeId, newManagerId);
-    console.log("\nEmployee Manager Updated\n");
-  } catch (err) {
-    throw err; // Re-throw the error for higher-level handling
-  }
-}
-
 // Prompt for selecting an employee to update
 async function promptForEmployeeToUpdate(employeeChoices) {
   const userInput = await inquirer.prompt([
@@ -611,6 +587,11 @@ async function promptForEmployeeToUpdate(employeeChoices) {
   return userInput;
 }
 
+// Filter out the selected employee from manager choices
+function filterManagerChoices(managerChoices, selectedEmployeeId) {
+  return managerChoices.filter((choice) => choice.value !== selectedEmployeeId);
+}
+
 // Prompt for selecting a new manager for the employee
 async function promptForNewManager(managerChoices) {
   const managerInput = await inquirer.prompt([
@@ -622,6 +603,16 @@ async function promptForNewManager(managerChoices) {
     },
   ]);
   return managerInput;
+}
+
+// Update an employee's manager
+async function updateEmployeeManagerWithDetails(employeeId, newManagerId) {
+  try {
+    await employee.updateEmployeeManagerQuery(employeeId, newManagerId);
+    console.log("\nEmployee Manager Updated\n");
+  } catch (err) {
+    throw err; // Re-throw the error for higher-level handling
+  }
 }
 
 // Update an employee's manager based on user input
@@ -650,9 +641,6 @@ async function updateEmployeeManager() {
       userInput.employeeId,
       managerInput.managerId
     );
-
-    // Add empty lines for spacing
-    console.log("\n");
 
     // Show the main menu
     showMainMenu();
@@ -692,7 +680,7 @@ function organizeEmployeesByManager(employees, managerIdMap) {
   return managerChoices;
 }
 
-// Function to prompt the user to select a manager
+// Prompt the user to select a manager
 async function promptForManagerSelection(managerChoices) {
   const userInput = await inquirer.prompt([
     {
@@ -903,24 +891,21 @@ async function viewDepartmentBudget() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
-// Delete by department
-async function deleteDepartment() {
+//------------------ Delete by Department ------------------------------------
+// Create an array of department choices for the user
+function createDepartmentChoices(departments) {
+  return departments.map((department) => ({
+    name: `${department.id} - ${department.name}`,
+    value: department.id,
+  }));
+}
+
+// Prompt the user to select a department for deletion
+async function promptForDepartmentSelection(departmentChoices) {
   try {
-    // Fetch the list of departments from the database
-    const departments = await data.viewAllDepartmentsQuery();
-
-    // Create an array of department choices for the user
-    const departmentChoices = departments.map((department) => ({
-      name: `${department.id} - ${department.name}`,
-      value: department.id,
-    }));
-
-    // Add a "Cancel" option to the list of choices
     departmentChoices.push({ name: "Cancel", value: "cancel" });
 
-    // Prompt the user to select a department for deletion
-    const res = await inquirer.prompt([
+    const response = await inquirer.prompt([
       {
         type: "list",
         message: "Select a department to delete:",
@@ -929,23 +914,44 @@ async function deleteDepartment() {
       },
     ]);
 
-    // Check if the user selected "Cancel"
-    if (res.departmentId === "cancel") {
+    return response.departmentId;
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Delete the department with the provided ID
+async function deleteDepartmentById(departmentId) {
+  try {
+    await data.deleteDepartmentByIdQuery(departmentId);
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Handle the deletion process
+async function deleteDepartment() {
+  try {
+    const departments = await fetchDepartmentData();
+    const departmentChoices = createDepartmentChoices(departments);
+    const departmentId = await promptForDepartmentSelection(departmentChoices);
+
+    if (departmentId === "cancel") {
       console.log("Operation canceled. Going back to the main menu.");
-      menu(); // Go back to the main menu
-      return; // Exit the function
+      menu();
+      return;
     }
 
-    // Call the delete function with the provided department ID
-    await data.deleteDepartmentByIdQuery(res.departmentId);
+    await deleteDepartmentById(departmentId);
 
-    // Log a success message and show the main menu
-    console.log("Department Deleted");
-    menu();
+    console.log(`\nDepartment Deleted\n`);
+
+    // Show Main Menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------
