@@ -113,7 +113,7 @@ class Employee {
   }
 
   // Method to retrieve employees by department
-  async viewEmployeesByDepartmentQuery(departmentId) {
+  async viewByDepartmentQuery(departmentId) {
     try {
       const queryString = `
       SELECT employee.id,

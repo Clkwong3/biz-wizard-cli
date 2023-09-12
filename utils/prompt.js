@@ -84,10 +84,10 @@ function menu() {
           updateEmployeeManager();
           break;
         case "View employees by manager":
-          viewEmployeesByManager();
+          viewByManager();
           break;
         case "View employees by department":
-          viewEmployeesByDepartment();
+          viewByDepartment();
           break;
         case "View department budget":
           viewDepartmentBudget();
@@ -611,7 +611,7 @@ async function promptForEmployeeToUpdate(employeeChoices) {
   return userInput;
 }
 
-// Function to prompt for selecting a new manager for the employee
+// Prompt for selecting a new manager for the employee
 async function promptForNewManager(managerChoices) {
   const managerInput = await inquirer.prompt([
     {
@@ -624,7 +624,7 @@ async function promptForNewManager(managerChoices) {
   return managerInput;
 }
 
-// Combined function to update an employee's manager based on user input
+// Update an employee's manager based on user input
 async function updateEmployeeManager() {
   try {
     // Fetch a list of employees
@@ -662,96 +662,152 @@ async function updateEmployeeManager() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
-// View employees by manager
-async function viewEmployeesByManager() {
-  try {
-    // Fetch a list of employees to choose from
-    const employees = await employee.viewAllEmployeesQuery();
+//------------------ View Employees By Manager -------------------------------------------
+// Organize employees by their managers
+function organizeEmployeesByManager(employees, managerIdMap) {
+  const managerChoicesArray = [];
 
-    // Create an array to store manager names and their corresponding manager IDs
-    const managerChoicesArray = [];
-    const managerIdMap = {};
-
-    // Populate the managerMap
-    employees.forEach((emp) => {
-      if (
-        emp.manager_first_name &&
-        emp.manager_last_name &&
-        emp.id !== emp.manager_id
-      ) {
-        const managerName = `${emp.manager_first_name} ${emp.manager_last_name}`;
-        if (!managerIdMap[managerName]) {
-          managerIdMap[managerName] = managerIdMap[managerName]
-            ? [...managerIdMap[managerName], emp.manager_id]
-            : [emp.manager_id];
-          managerChoicesArray.push(managerName);
-        }
-      }
-    });
-
-    // Modify the creation of managerChoices to include unique managers
-    const managerChoices = [...new Set(managerChoicesArray)].map((manager) => ({
-      name: manager,
-      value: managerIdMap[manager],
-    }));
-
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Prompt for selecting a manager
-    const userInput = await inquirer.prompt([
-      {
-        type: "list",
-        message:
-          "Select a manager to view their employees (Only managers with employees will show):",
-        name: "managerId",
-        choices: managerChoices,
-      },
-    ]);
-
-    // Add empty lines for spacing
-    console.log("\n");
-
-    // Filter employees based on the selected manager
-    const employeesByManager = employees.filter((emp) => {
+  employees.forEach((emp) => {
+    if (
+      emp.manager_first_name &&
+      emp.manager_last_name &&
+      emp.id !== emp.manager_id
+    ) {
       const managerName = `${emp.manager_first_name} ${emp.manager_last_name}`;
-      return managerIdMap[managerName] === userInput.managerId;
-    });
-
-    if (employeesByManager.length === 0) {
-      console.log("No employees found for this manager.");
-    } else {
-      // Display employees managed by the selected manager
-      console.table(
-        employeesByManager.map((emp) => ({
-          id: emp.id,
-          first_name: emp.first_name,
-          last_name: emp.last_name,
-          title: emp.title,
-          department: emp.department,
-          salary: emp.salary,
-        }))
-      );
+      if (!managerIdMap[managerName]) {
+        managerIdMap[managerName] = managerIdMap[managerName]
+          ? [...managerIdMap[managerName], emp.manager_id]
+          : [emp.manager_id];
+        managerChoicesArray.push(managerName);
+      }
     }
+  });
 
-    // Add empty lines for spacing
-    console.log("\n");
+  // Modify the creation of managerChoices to include unique managers
+  const managerChoices = [...new Set(managerChoicesArray)].map((manager) => ({
+    name: manager,
+    value: managerIdMap[manager],
+  }));
 
-    // Show the main menu
-    menu();
-  } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+  return managerChoices;
+}
+
+// Function to prompt the user to select a manager
+async function promptForManagerSelection(managerChoices) {
+  const userInput = await inquirer.prompt([
+    {
+      type: "list",
+      message:
+        "Select a manager to view their employees (Only managers with employees will show):",
+      name: "managerId",
+      choices: managerChoices,
+    },
+  ]);
+  return userInput;
+}
+
+// Filter employees based on the selected manager
+function filterEmployeesByManager(employees, managerId, managerIdMap) {
+  return employees.filter((emp) => {
+    const managerName = `${emp.manager_first_name} ${emp.manager_last_name}`;
+    return managerIdMap[managerName] === managerId;
+  });
+}
+
+// Display the list of employees managed by the selected manager
+function displayEmployees(employeesByManager) {
+  if (employeesByManager.length === 0) {
+    console.log("No employees found for this manager.");
+  } else {
+    // Display employees managed by the selected manager
+    console.table(
+      employeesByManager.map((emp) => ({
+        id: emp.id,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        title: emp.title,
+        department: emp.department,
+        salary: emp.salary,
+      }))
+    );
   }
 }
-//----------------------------------------------------------------
-// View employees by department
-async function viewEmployeesByDepartment() {
+
+// Main function to view employees by manager
+async function viewByManager() {
   try {
-    // Fetch a list of departments to choose from
-    const departments = await data.viewAllDepartmentsQuery();
+    // Fetch a list of employees
+    const employees = await fetchEmployeeData();
+
+    // Declare and initialize managerIdMap
+    const managerIdMap = {};
+
+    // Organize employees by their managers and get manager choices
+    const managerChoices = organizeEmployeesByManager(employees, managerIdMap);
+
+    // Prompt for selecting a manager
+    const userInput = await promptForManagerSelection(managerChoices);
+
+    // Filter employees based on the selected manager
+    const employeesByManager = filterEmployeesByManager(
+      employees,
+      userInput.managerId,
+      managerIdMap
+    );
+
+    // Display employees managed by the selected manager
+    displayEmployees(employeesByManager);
+
+    // Show the main menu
+    showMainMenu();
+  } catch (err) {
+    // Handle errors
+    handleError(err);
+    showMainMenu();
+  }
+}
+//------------------ View Employees By Department -------------------------------------------
+// Prompt the user to select a department
+async function promptForDepartmentSelection(departmentChoices) {
+  const userInput = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Select a department to view its employees:",
+      name: "departmentId",
+      choices: departmentChoices,
+    },
+  ]);
+  return userInput.departmentId;
+}
+
+// Fetch employees by department
+async function fetchEmployeesByDepartment(departmentId) {
+  return await employee.viewByDepartmentQuery(departmentId);
+}
+
+// Display employees
+function displayEmployees(employees) {
+  if (employees.length === 0) {
+    console.log("No employees found for this department.");
+  } else {
+    // Display employees in the selected department
+    console.table(
+      employees.map((emp) => ({
+        id: emp.id,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        title: emp.title,
+        salary: emp.salary,
+      }))
+    );
+  }
+}
+
+// View employees by department
+async function viewByDepartment() {
+  try {
+    // Fetch a list of departments
+    const departments = await fetchDepartmentData();
 
     // Create user choices for selecting a department
     const departmentChoices = departments.map((dept) => ({
@@ -760,41 +816,22 @@ async function viewEmployeesByDepartment() {
     }));
 
     // Prompt for selecting a department
-    const userInput = await inquirer.prompt([
-      {
-        type: "list",
-        message: "Select a department to view its employees:",
-        name: "departmentId",
-        choices: departmentChoices,
-      },
-    ]);
+    const departmentId = await promptForDepartmentSelection(departmentChoices);
 
-    // Fetch all employees in the selected department
-    const employeesByDepartment = await employee.viewEmployeesByDepartmentQuery(
-      userInput.departmentId
+    // Fetch employees in the selected department
+    const employeesByDepartment = await fetchEmployeesByDepartment(
+      departmentId
     );
 
-    if (employeesByDepartment.length === 0) {
-      console.log("No employees found for this department.");
-    } else {
-      // Display employees in the selected department
-      console.table(
-        employeesByDepartment.map((emp) => ({
-          id: emp.id,
-          first_name: emp.first_name,
-          last_name: emp.last_name,
-          title: emp.title,
-          salary: emp.salary,
-        }))
-      );
-    }
+    // Display employees
+    displayEmployees(employeesByDepartment);
 
-    // Show the main menu
-    menu();
+    // Show Main Menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------
