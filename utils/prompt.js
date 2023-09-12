@@ -1015,24 +1015,21 @@ async function deleteRole() {
     showMainMenu();
   }
 }
-//----------------------------------------------------------------
-// Delete an employee
-async function deleteEmployee() {
+//------------------ Delete an Employee ------------------------------------
+// Create an array of employee choices based on Employee IDs
+function createEmployeeChoices(employees) {
+  return employees.map((employee) => ({
+    name: `${employee.id} - ${employee.first_name} ${employee.last_name}`,
+    value: employee.id,
+  }));
+}
+
+// Prompt the user to select the Employee for deletion
+async function promptForEmployeeSelection(employeeChoices) {
   try {
-    // Fetch all employee data from the database using the correct module (employee)
-    const employees = await employee.viewAllEmployeesQuery();
-
-    // Create an array of employees choices based on the available Employee IDs
-    const employeeChoices = employees.map((employee) => ({
-      name: `${employee.id} - ${employee.first_name} ${employee.last_name}`,
-      value: employee.id,
-    }));
-
-    // Add a "Cancel" option to the list of choices
     employeeChoices.push({ name: "Cancel", value: "cancel" });
 
-    // Prompt the user to select the Employee to delete
-    const res = await inquirer.prompt([
+    const response = await inquirer.prompt([
       {
         type: "list",
         message: "Select an Employee to delete:",
@@ -1041,23 +1038,44 @@ async function deleteEmployee() {
       },
     ]);
 
-    // Check if the user selected "Cancel"
-    if (res.employeeId === "cancel") {
-      console.log("Operation canceled. Going back to the main menu.");
-      menu(); // Go back to the main menu
-      return; // Exit the function
+    return response.employeeId;
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Delete the employee with the provided ID
+async function deleteEmployeeById(employeeId) {
+  try {
+    await employee.deleteEmployeeByIdQuery(employeeId);
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Handle the deletion process
+async function deleteEmployee() {
+  try {
+    const employees = await fetchEmployeeData();
+    const employeeChoices = createEmployeeChoices(employees);
+    const employeeId = await promptForEmployeeSelection(employeeChoices);
+
+    if (employeeId === "cancel") {
+      console.log(`\nOperation canceled. Going back to the main menu.\n`);
+      menu();
+      return;
     }
 
-    // Call the deleteEmployeeById method with the provided employee ID
-    await employee.deleteEmployeeByIdQuery(res.employeeId);
+    await deleteEmployeeById(employeeId);
 
-    // Log a success message and show the main menu
-    console.log("Employee Deleted");
-    menu();
+    console.log(`\nEmployee Deleted Successfully\n`);
+
+    // Show Main Menu
+    showMainMenu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------

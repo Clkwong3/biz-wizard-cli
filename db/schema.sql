@@ -33,7 +33,7 @@ CREATE TABLE employee (
   manager_id INT,
   FOREIGN KEY (role_id)
     REFERENCES role(id)
-    ON DELETE CASCADE, -- Cascade deletion of employees when a role is deleted
+    ON DELETE SET NULL, -- Set role_id to NULL if the role is deleted
   FOREIGN KEY (manager_id)
     REFERENCES employee(id)
     ON DELETE SET NULL -- Set manager_id to NULL if the manager is deleted
