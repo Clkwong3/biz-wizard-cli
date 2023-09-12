@@ -111,13 +111,13 @@ function menu() {
 // Function to handle program exit
 function closeProgram() {
   // Display a goodbye message and close the database connection
-  console.log("Thank you for using Employee Tracker. Goodbye! 👋");
+  console.log("\nThank you for using Employee Tracker. Goodbye! 👋");
   connection.end((err) => {
     if (err) {
       console.error("Error closing the database connection:", err);
       return;
     } else {
-      console.log("Database connection closed.");
+      console.log("Database connection closed.\n");
     }
   });
 }
@@ -152,9 +152,6 @@ function transformToTableData(data) {
 
 // Display department data as a table
 function displayTable(data) {
-  // Add empty lines for spacing
-  console.log("\n");
-
   // Display department data as a table
   console.table(data);
 }
@@ -167,6 +164,9 @@ async function viewAllDepartments() {
 
     // Transform data for table display
     const tableData = transformToTableData(departmentData);
+
+    // Add an empty line for spacing
+    console.log("\n");
 
     // Display department data
     displayTable(tableData);
@@ -198,7 +198,7 @@ async function promptForDepartmentName() {
 async function addDepartmentWithName(name) {
   try {
     await data.addDepartmentQuery(name);
-    console.log("Department Added Successfully");
+    console.log("\nDepartment Added Successfully\n");
   } catch (err) {
     throw err; // Handle errors at a higher level
   }
@@ -243,9 +243,6 @@ function transformRoleDataForDisplay(role) {
 
 // Display role data as a table
 function displayRoleTable(role) {
-  // Add empty lines for spacing
-  console.log("\n");
-
   // Display role data as a table
   console.table(role);
 }
@@ -258,6 +255,9 @@ async function viewAllRoles() {
 
     // Transform data for display
     const tableData = transformRoleDataForDisplay(roleData);
+
+    // Add an empty line for spacing
+    console.log("\n");
 
     // Display role data
     displayRoleTable(tableData);
@@ -321,7 +321,7 @@ async function promptForRoleDetails(departmentChoices) {
 async function addRoleWithDetails(title, salary, departmentId) {
   try {
     await role.addRoleQuery(title, salary, departmentId);
-    console.log("Role Added Successfully");
+    console.log("\nRole Added Successfully\n");
   } catch (err) {
     throw err;
   }
@@ -376,15 +376,12 @@ function transformEmployeeDataForDisplay(employee) {
     Manager:
       row.manager_first_name && row.manager_last_name
         ? row.manager_first_name + " " + row.manager_last_name
-        : "No Manager", // Replace null manager info with "No Manager"
+        : "\nNo Manager\n", // Replace null manager info with "No Manager"
   }));
 }
 
 // Display employee data as a table
 function displayEmployeeTable(employee) {
-  // Add empty lines for spacing
-  console.log("\n");
-
   // Display employee data as a table
   console.table(employee);
 }
@@ -397,6 +394,9 @@ async function viewAllEmployees() {
 
     // Transform the data for display
     const tableData = transformEmployeeDataForDisplay(employeeData);
+
+    // Add empty lines for spacing
+    console.log("\n");
 
     // Display employee data
     displayEmployeeTable(tableData);
@@ -472,7 +472,7 @@ async function promptForEmployeeDetails(roleChoices, managerChoices) {
 async function addEmployeeWithDetails(firstName, lastName, roleId, managerId) {
   try {
     await employee.addEmployeeQuery(firstName, lastName, roleId, managerId);
-    console.log("Employee Added");
+    console.log("\nEmployee Added\n");
   } catch (err) {
     throw err;
   }
@@ -543,7 +543,7 @@ async function promptForEmployeeAndRole(employeeChoices, roleChoices) {
 async function updateEmployeeRoleWithDetails(employeeId, newRoleId) {
   try {
     await employee.updateEmployeeRoleQuery(employeeId, newRoleId);
-    console.log("Employee Role Updated");
+    console.log("\nEmployee Role Updated\n");
   } catch (err) {
     throw err;
   }
@@ -592,7 +592,7 @@ function filterManagerChoices(managerChoices, selectedEmployeeId) {
 async function updateEmployeeManagerWithDetails(employeeId, newManagerId) {
   try {
     await employee.updateEmployeeManagerQuery(employeeId, newManagerId);
-    console.log("Employee Manager Updated");
+    console.log("\nEmployee Manager Updated\n");
   } catch (err) {
     throw err; // Re-throw the error for higher-level handling
   }
@@ -717,7 +717,7 @@ function filterEmployeesByManager(employees, managerId, managerIdMap) {
 // Display the list of employees managed by the selected manager
 function displayEmployees(employeesByManager) {
   if (employeesByManager.length === 0) {
-    console.log("No employees found for this manager.");
+    console.log("\nNo employees found for this manager.\n");
   } else {
     // Display employees managed by the selected manager
     console.table(
@@ -788,7 +788,7 @@ async function fetchEmployeesByDepartment(departmentId) {
 // Display employees
 function displayEmployees(employees) {
   if (employees.length === 0) {
-    console.log("No employees found for this department.");
+    console.log("\nNo employees found for this department.\n");
   } else {
     console.log("\n");
 
@@ -836,19 +836,25 @@ async function viewByDepartment() {
     showMainMenu();
   }
 }
-//------------------ View Departments Budget ---------------------------------------
-// Modify the viewDepartmentBudget function
-async function viewDepartmentBudget() {
+//------------------ View Department's Budget ---------------------------------------
+// Fetch department choices for user selection
+async function fetchDepartmentChoices() {
   try {
-    // Fetch data from the data module
+    // Fetch a list of departments from the data module
     const departments = await data.viewAllDepartmentsQuery();
-
-    // Create department choices for user selection
-    const departmentChoices = departments.map((department) => ({
+    return departments.map((department) => ({
       name: department.name,
       value: department.id,
     }));
+  } catch (err) {
+    throw err;
+  }
+}
 
+// Prompt the user to select a department
+async function promptForDepartmentSelection(departmentChoices) {
+  try {
+    // Prompt the user to select a department from the choices
     const departmentResponse = await inquirer.prompt([
       {
         type: "list",
@@ -857,18 +863,44 @@ async function viewDepartmentBudget() {
         choices: departmentChoices,
       },
     ]);
+    return departmentResponse.departmentId;
+  } catch (err) {
+    throw err;
+  }
+}
 
-    // Call the calculateTotalSalaryByDepartmentId method with the selected department ID
+// Calculate and display the department's total budget
+async function calculateAndDisplayBudget(departmentId) {
+  try {
+    // Calculate the total salary budget for the selected department
     const totalSalary = await data.calculateTotalSalaryByDepartmentIdQuery(
-      departmentResponse.departmentId
+      departmentId
     );
 
-    console.log(`Total Budget of the Department: $${totalSalary}`);
+    // Display the total budget of the department
+    console.log(`\nTotal Budget of the Department: $${totalSalary}\n`);
+  } catch (err) {
+    throw err;
+  }
+}
+
+// View department budget
+async function viewDepartmentBudget() {
+  try {
+    // Fetch department choices for user selection
+    const departmentChoices = await fetchDepartmentChoices();
+
+    // Prompt the user to select a department
+    const departmentId = await promptForDepartmentSelection(departmentChoices);
+
+    // Calculate and display the budget for the selected department
+    await calculateAndDisplayBudget(departmentId);
+
     menu();
   } catch (err) {
-    // Handle and log errors, then show the main menu
-    console.error(err);
-    menu();
+    // Handle errors
+    handleError(err);
+    showMainMenu();
   }
 }
 //----------------------------------------------------------------
