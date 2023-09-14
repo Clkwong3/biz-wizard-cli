@@ -120,6 +120,12 @@ function closeProgram() {
   });
 }
 
+// Function to handle cancellation
+function handleCancellation(operationName) {
+  console.log(`\n${operationName} canceled. Going back to the main menu.\n`);
+  showMainMenu();
+}
+
 // Error handling function
 function handleError(err) {
   // Handle and log errors
@@ -136,7 +142,7 @@ async function fetchDepartmentData() {
   try {
     return await data.viewAllDepartmentsQuery();
   } catch (err) {
-    throw err; // Handle error at a higher level
+    handleError(err); // Handle error at a higher level
   }
 }
 
@@ -180,25 +186,19 @@ async function viewAllDepartments() {
 //------------------ Add Departments -------------------------------------------
 // Prompt the user for a department name
 async function promptForDepartmentName() {
-  const answers = await inquirer.prompt([
-    {
-      type: "input",
-      message: "Enter the Department name:",
-      name: "name",
-      validate: (value) =>
-        value.trim() === "" ? "Please enter a department name." : true,
-    },
-  ]);
-  return answers.name;
-}
-
-// Add a department with the provided name
-async function addDepartmentWithName(name) {
   try {
-    await data.addDepartmentQuery(name);
-    console.log("\nDepartment Added Successfully\n");
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        message: "Enter the Department name:",
+        name: "name",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter a department name." : true,
+      },
+    ]);
+    return answers.name;
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -209,7 +209,8 @@ async function addDepartment() {
     const departmentName = await promptForDepartmentName();
 
     // Add the department with the provided name
-    await addDepartmentWithName(departmentName);
+    await data.addDepartmentQuery(departmentName);
+    console.log("\nDepartment Added Successfully\n");
 
     // Show the main menu
     showMainMenu();
@@ -224,7 +225,7 @@ async function fetchRoleData() {
   try {
     return await role.viewAllRolesQuery();
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -274,42 +275,56 @@ function createDepartmentChoices(departments) {
   }));
 }
 
-// Prompt user for role details: title, salary, department
-async function promptForRoleDetails(departmentChoices) {
-  const answers = await inquirer.prompt([
-    {
-      type: "input",
-      message: "Role Title:",
-      name: "title",
-      validate: (value) =>
-        value.trim() === "" ? "Please enter a role title." : true,
-    },
-    {
-      type: "input",
-      message: "Role Salary:",
-      name: "salary",
-      validate: (value) =>
-        isNaN(value) || Number(value) <= 0
-          ? "Please enter a valid positive salary."
-          : true,
-    },
-    {
-      type: "list",
-      message: "Select the department for the role:",
-      name: "departmentId",
-      choices: departmentChoices,
-    },
-  ]);
-  return answers;
+// Create department choices for user
+function createDepartmentChoices(departments) {
+  return departments.map((departments) => ({
+    name: departments.name,
+    value: departments.id,
+  }));
 }
 
-// Add a role with the provide details
+// Prompt user for role details: title, salary, department
+async function promptForRoleDetails(departmentChoices) {
+  try {
+    departmentChoices.push({ name: "Cancel", value: "cancel" });
+
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        message: "Role Title:",
+        name: "title",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter a role title." : true,
+      },
+      {
+        type: "input",
+        message: "Role Salary:",
+        name: "salary",
+        validate: (value) =>
+          isNaN(value) || Number(value) <= 0
+            ? "Please enter a valid positive salary."
+            : true,
+      },
+      {
+        type: "list",
+        message: "Select the department for the role:",
+        name: "departmentId",
+        choices: departmentChoices,
+      },
+    ]);
+    return answers;
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+// Add a role with provided details
 async function addRoleWithDetails(title, salary, departmentId) {
   try {
     await role.addRoleQuery(title, salary, departmentId);
     console.log("\nRole Added Successfully\n");
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -323,14 +338,16 @@ async function addRole() {
     const departmentChoices = createDepartmentChoices(departments);
 
     // Prompt user for role details
-    const answers = await promptForRoleDetails(departmentChoices);
+    const answer = await promptForRoleDetails(departmentChoices);
+
+    // Check if the selected department is 'cancel'
+    if (answer.departmentId === "cancel") {
+      handleCancellation("Role creation");
+      return;
+    }
 
     // Add a role with provided details
-    await addRoleWithDetails(
-      answers.title,
-      answers.salary,
-      answers.departmentId
-    );
+    await addRoleWithDetails(answer.title, answer.salary, answer.departmentId);
 
     showMainMenu();
   } catch (err) {
@@ -344,7 +361,7 @@ async function fetchEmployeeData() {
   try {
     return await employee.viewAllEmployeesQuery();
   } catch (err) {
-    throw err; // Re-throw the error
+    handleError(err);
   }
 }
 
@@ -416,45 +433,51 @@ function createUserManagerChoices(employees) {
 
 // Prompt the user for employee details
 async function promptForEmployeeDetails(roleChoices, managerChoices) {
-  const userInputs = await inquirer.prompt([
-    {
-      type: "input",
-      message: "First name:",
-      name: "firstName",
-      validate: (value) =>
-        value.trim() === "" ? "Please enter the first name." : true,
-    },
-    {
-      type: "input",
-      message: "Last name:",
-      name: "lastName",
-      validate: (value) =>
-        value.trim() === "" ? "Please enter the last name." : true,
-    },
-    {
-      type: "list",
-      message: "Select the role:",
-      name: "roleId",
-      choices: roleChoices,
-    },
-    {
-      type: "list",
-      message: "Select the manager (if applicable):",
-      name: "managerId",
-      choices: managerChoices,
-    },
-  ]);
+  try {
+    roleChoices.push({ name: "Cancel", value: "cancel" });
+    managerChoices.push({ name: "Cancel", value: "cancel" });
 
-  return userInputs;
+    const answer = await inquirer.prompt([
+      {
+        type: "input",
+        message: "First name:",
+        name: "firstName",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter the first name." : true,
+      },
+      {
+        type: "input",
+        message: "Last name:",
+        name: "lastName",
+        validate: (value) =>
+          value.trim() === "" ? "Please enter the last name." : true,
+      },
+      {
+        type: "list",
+        message: "Select the role:",
+        name: "roleId",
+        choices: roleChoices,
+      },
+      {
+        type: "list",
+        message: "Select the manager (if applicable):",
+        name: "managerId",
+        choices: managerChoices,
+      },
+    ]);
+    return answer;
+  } catch (err) {
+    handleError(err);
+  }
 }
 
 // Add an employee with provided details
 async function addEmployeeWithDetails(firstName, lastName, roleId, managerId) {
   try {
     await employee.addEmployeeQuery(firstName, lastName, roleId, managerId);
-    console.log("\nEmployee Added\n");
+    console.log("\nEmployee Added Successfully\n");
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -470,17 +493,20 @@ async function addEmployee() {
     const managerChoices = createUserManagerChoices(employees);
 
     // Prompt for employee details
-    const userInputs = await promptForEmployeeDetails(
-      roleChoices,
-      managerChoices
-    );
+    const answer = await promptForEmployeeDetails(roleChoices, managerChoices);
+
+    // Check if the selected role is 'cancel'
+    if (answer.roleId === "cancel") {
+      handleCancellation("Employee creation");
+      return;
+    }
 
     // Add an employee with provided details
     await addEmployeeWithDetails(
-      userInputs.firstName,
-      userInputs.lastName,
-      userInputs.roleId,
-      userInputs.managerId
+      answer.firstName,
+      answer.lastName,
+      answer.roleId,
+      answer.managerId
     );
 
     showMainMenu();
@@ -489,6 +515,7 @@ async function addEmployee() {
     showMainMenu();
   }
 }
+
 //------------------ Update Employee's Role -------------------------------------------
 // Create user choices for employees
 function createUserEmployeeChoices(employee) {
@@ -500,30 +527,37 @@ function createUserEmployeeChoices(employee) {
 
 // Prompt the user for employee and new role details
 async function promptForEmployeeAndRole(employeeChoices, roleChoices) {
-  const answers = await inquirer.prompt([
-    {
-      type: "list",
-      message: "Select the employee you want to update:",
-      name: "employeeId",
-      choices: employeeChoices,
-    },
-    {
-      type: "list",
-      message: "Select the new role for the employee:",
-      name: "newRoleId",
-      choices: roleChoices,
-    },
-  ]);
-  return answers;
+  try {
+    employeeChoices.push({ name: "Cancel", value: "cancel" });
+    roleChoices.push({ name: "Cancel", value: "cancel" });
+
+    const answer = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select the employee you want to update:",
+        name: "employeeId",
+        choices: employeeChoices,
+      },
+      {
+        type: "list",
+        message: "Select the new role for the employee:",
+        name: "newRoleId",
+        choices: roleChoices,
+      },
+    ]);
+    return answer;
+  } catch (err) {
+    handleError(err);
+  }
 }
 
 // Update an employee's role
 async function updateEmployeeRoleWithDetails(employeeId, newRoleId) {
   try {
     await employee.updateEmployeeRoleQuery(employeeId, newRoleId);
-    console.log("\nEmployee Role Updated\n");
+    console.log("\nEmployee Role Updated Successfully`\n");
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -539,16 +573,16 @@ async function updateEmployeeRole() {
     const employeeChoices = createUserEmployeeChoices(employees);
 
     // Prompt the user for employee and new role details
-    const userInputs = await promptForEmployeeAndRole(
-      employeeChoices,
-      roleChoices
-    );
+    const answer = await promptForEmployeeAndRole(employeeChoices, roleChoices);
+
+    // Check if the selected employee or role is 'cancel'
+    if (answer.employeeId === "cancel" || answer.newRoleId === "cancel") {
+      handleCancellation("Employee role update");
+      return;
+    }
 
     // Update the employee's role with provided details
-    await updateEmployeeRoleWithDetails(
-      userInputs.employeeId,
-      userInputs.newRoleId
-    );
+    await updateEmployeeRoleWithDetails(answer.employeeId, answer.newRoleId);
 
     showMainMenu();
   } catch (err) {
@@ -559,26 +593,34 @@ async function updateEmployeeRole() {
 //----------------------------------------------------------------------------------------
 // BONUS FUNCTIONS STARTS HERE
 //------------------ Update Employee's Manager -------------------------------------------
-// Prompt for selecting an employee to update
-async function promptForEmployeeToUpdate(employeeChoices) {
-  const userInput = await inquirer.prompt([
-    {
-      type: "list",
-      message: "Select the employee you want to update:",
-      name: "employeeId",
-      choices: employeeChoices,
-    },
-  ]);
-  return userInput;
-}
-
 // Filter out the selected employee from manager choices
 function filterManagerChoices(managerChoices, selectedEmployeeId) {
   return managerChoices.filter((choice) => choice.value !== selectedEmployeeId);
 }
 
+// Prompt for selecting an employee to update
+async function promptForEmployeeToUpdate(employeeChoices) {
+  try {
+    employeeChoices.push({ name: "Cancel", value: "cancel" });
+
+    const answer = await inquirer.prompt([
+      {
+        type: "list",
+        message: "Select the employee you want to update:",
+        name: "employeeId",
+        choices: employeeChoices,
+      },
+    ]);
+    return answer;
+  } catch (error) {
+    handleError(error);
+  }
+}
+
 // Prompt for selecting a new manager for the employee
 async function promptForNewManager(managerChoices) {
+  managerChoices.push({ name: "Cancel", value: "cancel" });
+
   const managerInput = await inquirer.prompt([
     {
       type: "list",
@@ -594,9 +636,9 @@ async function promptForNewManager(managerChoices) {
 async function updateEmployeeManagerWithDetails(employeeId, newManagerId) {
   try {
     await employee.updateEmployeeManagerQuery(employeeId, newManagerId);
-    console.log("\nEmployee Manager Updated\n");
+    console.log("\nEmployee Manager Updated Successfully\n");
   } catch (err) {
-    throw err; // Re-throw the error for higher-level handling
+    handleError(err);
   }
 }
 
@@ -610,20 +652,26 @@ async function updateEmployeeManager() {
     const employeeChoices = createUserEmployeeChoices(employees);
 
     // Prompt for selecting an employee to update
-    const userInput = await promptForEmployeeToUpdate(employeeChoices);
+    const answer = await promptForEmployeeToUpdate(employeeChoices);
 
     // Filter out the selected employee from manager choices
     const managerChoices = filterManagerChoices(
       employeeChoices,
-      userInput.employeeId
+      answer.employeeId
     );
 
     // Prompt for selecting a new manager for the employee
     const managerInput = await promptForNewManager(managerChoices);
 
+    // Check if the selected employee or role is 'cancel'
+    if (answer.employeeId === "cancel" || managerInput.managerId === "cancel") {
+      handleCancellation("Employee role update");
+      return;
+    }
+
     // Update the employee's manager with provided details
     await updateEmployeeManagerWithDetails(
-      userInput.employeeId,
+      answer.employeeId,
       managerInput.managerId
     );
 
@@ -665,7 +713,7 @@ function organizeEmployeesByManager(employees, managerIdMap) {
 
 // Prompt the user to select a manager
 async function promptForManagerSelection(managerChoices) {
-  const userInput = await inquirer.prompt([
+  const answer = await inquirer.prompt([
     {
       type: "list",
       message:
@@ -674,7 +722,7 @@ async function promptForManagerSelection(managerChoices) {
       choices: managerChoices,
     },
   ]);
-  return userInput;
+  return answer;
 }
 
 // Filter employees based on the selected manager
@@ -717,12 +765,12 @@ async function viewByManager() {
     const managerChoices = organizeEmployeesByManager(employees, managerIdMap);
 
     // Prompt for selecting a manager
-    const userInput = await promptForManagerSelection(managerChoices);
+    const answer = await promptForManagerSelection(managerChoices);
 
     // Filter employees based on the selected manager
     const employeesByManager = filterEmployeesByManager(
       employees,
-      userInput.managerId,
+      answer.managerId,
       managerIdMap
     );
 
@@ -738,7 +786,7 @@ async function viewByManager() {
 //------------------ View Employees By Department -------------------------------------------
 // Prompt the user to select a department
 async function promptForDepartmentSelection(departmentChoices) {
-  const userInput = await inquirer.prompt([
+  const answer = await inquirer.prompt([
     {
       type: "list",
       message: "Select a department to view its employees:",
@@ -746,7 +794,7 @@ async function promptForDepartmentSelection(departmentChoices) {
       choices: departmentChoices,
     },
   ]);
-  return userInput.departmentId;
+  return answer.departmentId;
 }
 
 // Fetch employees by department
@@ -814,7 +862,7 @@ async function fetchDepartmentChoices() {
       value: department.id,
     }));
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -832,7 +880,7 @@ async function promptForDepartmentSelection(departmentChoices) {
     ]);
     return departmentResponse.departmentId;
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -847,7 +895,7 @@ async function calculateAndDisplayBudget(departmentId) {
     // Display the total budget of the department
     console.log(`\nTotal Budget of the Department: $${totalSalary}\n`);
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -894,7 +942,7 @@ async function promptForDepartmentSelection(departmentChoices) {
 
     return response.departmentId;
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -902,8 +950,9 @@ async function promptForDepartmentSelection(departmentChoices) {
 async function deleteDepartmentById(departmentId) {
   try {
     await data.deleteDepartmentByIdQuery(departmentId);
+    console.log(`\nDepartment Deleted Successfully\n`);
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -915,14 +964,11 @@ async function deleteDepartment() {
     const departmentId = await promptForDepartmentSelection(departmentChoices);
 
     if (departmentId === "cancel") {
-      console.log(`\nOperation canceled. Going back to the main menu.\n`);
-      menu();
+      handleCancellation("Deletion");
       return;
     }
 
     await deleteDepartmentById(departmentId);
-
-    console.log(`\nDepartment Deleted Successfully\n`);
 
     showMainMenu();
   } catch (err) {
@@ -955,7 +1001,7 @@ async function promptForRoleSelection(roleChoices) {
 
     return response.roleId;
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -963,8 +1009,9 @@ async function promptForRoleSelection(roleChoices) {
 async function deleteRoleById(roleId) {
   try {
     await role.deleteRoleByIdQuery(roleId);
+    console.log(`\nRole Deleted Successfully\n`);
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -976,14 +1023,11 @@ async function deleteRole() {
     const roleId = await promptForRoleSelection(roleChoices);
 
     if (roleId === "cancel") {
-      console.log(`\nOperation canceled. Going back to the main menu.\n`);
-      menu();
+      handleCancellation("Deletion");
       return;
     }
 
     await deleteRoleById(roleId);
-
-    console.log(`\nRole Deleted Successfully\n`);
 
     showMainMenu();
   } catch (err) {
@@ -1016,7 +1060,7 @@ async function promptForEmployeeSelection(employeeChoices) {
 
     return response.employeeId;
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -1024,8 +1068,9 @@ async function promptForEmployeeSelection(employeeChoices) {
 async function deleteEmployeeById(employeeId) {
   try {
     await employee.deleteEmployeeByIdQuery(employeeId);
+    console.log(`\nEmployee Deleted Successfully\n`);
   } catch (err) {
-    throw err;
+    handleError(err);
   }
 }
 
@@ -1037,14 +1082,11 @@ async function deleteEmployee() {
     const employeeId = await promptForEmployeeSelection(employeeChoices);
 
     if (employeeId === "cancel") {
-      console.log(`\nOperation canceled. Going back to the main menu.\n`);
-      menu();
+      handleCancellation("Deletion");
       return;
     }
 
     await deleteEmployeeById(employeeId);
-
-    console.log(`\nEmployee Deleted Successfully\n`);
 
     showMainMenu();
   } catch (err) {
