@@ -1,5 +1,5 @@
 // Import required module
-const connection = require("../db/config"); // Database configuration
+const connection = require("../../db/config"); // Database configuration
 
 // Role class to bundle database queries about the roles
 class Role {

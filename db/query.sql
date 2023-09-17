@@ -27,7 +27,7 @@ VALUES ('Customer Support Specialist', 42683.00, 10); -- Assuming Customer Suppo
 
 -- Add a new employee
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
-VALUES ('Dewey', 'Nehalp', 11, NULL); -- Assuming 'Customer Support Specialist' is role_id 11
+VALUES ('Dewey', 'Nehelp', 11, NULL); -- Assuming 'Customer Support Specialist' is role_id 11
 
 -- UPDATE Queries
 -- Update an employee's salary

@@ -6,9 +6,13 @@ require("console.table"); // Import console.table for displaying data in tabular
 
 const figletAsync = util.promisify(figlet); // Promisify the figlet function to use async/await
 const connection = require("../db/config"); // Database configuration
-const data = require("./department"); // Import data functions from the department module
-const role = require("./role"); // Import role functions from the role module
-const employee = require("./employee"); // Import employee functions from the employee module
+const data = require("./queries/departmentQueries"); // Import data functions from the department module
+const role = require("./queries/roleQueries"); // Import role functions from the role module
+const employee = require("./queries/employeeQueries"); // Import employee functions from the employee module
+
+const departmentFunctions = require("./functions/departmentFunctions"); // Import department-related functions
+const employeeFunctions = require("./functions/employeeFunctions"); // Import employee-related functions
+const roleFunctions = require("./functions/roleFunctions"); // Import role-related functions
 
 // Function to generate the header
 async function generateHeader() {
@@ -137,43 +141,20 @@ function showMainMenu() {
   menu();
 }
 //------------------ View All Departments -------------------------------------------
-// Fetch department data from data module
-async function fetchDepartmentData() {
-  try {
-    return await data.viewAllDepartmentsQuery();
-  } catch (err) {
-    handleError(err); // Handle error at a higher level
-  }
-}
-
-// Transform department data for table display
-function transformToTableData(data) {
-  return data.map((row) => ({
-    Department_ID: row.id,
-    Department_Name: row.name,
-  }));
-}
-
-// Display department data as a table
-function displayTable(data) {
-  // Display department data as a table
-  console.table(data);
-}
-
 // Retrieve and display all department data
 async function viewAllDepartments() {
   try {
     // Fetch department data
-    const departmentData = await fetchDepartmentData();
+    const departmentData = await departmentFunctions.fetchDepartmentData();
 
     // Transform data for table display
-    const tableData = transformToTableData(departmentData);
+    const tableData = departmentFunctions.transformToTableData(departmentData);
 
     // Add an empty line for spacing
     console.log("\n");
 
     // Display department data
-    displayTable(tableData);
+    departmentFunctions.displayTable(tableData);
 
     // Show Main Menu
     showMainMenu();
