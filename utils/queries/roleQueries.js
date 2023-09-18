@@ -25,10 +25,11 @@ class Role {
   async viewAllRolesQuery() {
     try {
       const sql = `
-        SELECT role.id, 
+        SELECT 
+          role.id, 
           role.title, 
           department.name AS department_name, 
-          role.salary
+          LPAD(CONCAT('$', FORMAT(role.salary, 2)), 11, ' ') AS salary
         FROM role
         LEFT JOIN department ON role.department_id = department.id;
       `;

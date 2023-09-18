@@ -25,19 +25,19 @@ class Employee {
   async viewAllEmployeesQuery(departmentId = null) {
     try {
       let queryString = `
-        SELECT 
-          employee.id,
-          employee.first_name,
-          employee.last_name,
-          role.title AS title,
-          department.name AS department,
-          role.salary AS salary,
-          CONCAT(manager.first_name, ' ', manager.last_name) AS manager
-        FROM employee
-        LEFT JOIN role ON employee.role_id = role.id
-        LEFT JOIN department ON role.department_id = department.id
-        LEFT JOIN employee AS manager ON manager.id = employee.manager_id
-      `;
+      SELECT 
+        employee.id,
+        employee.first_name,
+        employee.last_name,
+        role.title AS title,
+        department.name AS department,
+        LPAD(CONCAT('$', FORMAT(role.salary, 2)), 11, ' ') AS salary,
+        CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+      FROM employee
+      LEFT JOIN role ON employee.role_id = role.id
+      LEFT JOIN department ON role.department_id = department.id
+      LEFT JOIN employee AS manager ON manager.id = employee.manager_id
+    `;
 
       if (departmentId !== null) {
         queryString += `
