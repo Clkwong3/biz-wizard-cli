@@ -313,7 +313,7 @@ async function addRoleWithDetails(title, salary, departmentId) {
 async function addRole() {
   try {
     // Fetch department data for user choice
-    const departments = await fetchDepartmentData();
+    const departments = await departmentFunctions.fetchDepartmentData();
 
     // Create department choices for user
     const departmentChoices = createDepartmentChoices(departments);
@@ -807,7 +807,7 @@ function displayEmployees(employees) {
 async function viewByDepartment() {
   try {
     // Fetch a list of departments
-    const departments = await fetchDepartmentData();
+    const departments = await departmentFunctions.fetchDepartmentData();
 
     // Create user choices for selecting a department
     const departmentChoices = departments.map((dept) => ({
@@ -940,7 +940,7 @@ async function deleteDepartmentById(departmentId) {
 // Handle the deletion process
 async function deleteDepartment() {
   try {
-    const departments = await fetchDepartmentData();
+    const departments = await departmentFunctions.fetchDepartmentData();
     const departmentChoices = createDepartmentChoices(departments);
     const departmentId = await promptForDepartmentSelection(departmentChoices);
 
